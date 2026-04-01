@@ -1,0 +1,76 @@
+{
+  "experiment_name": "cifar10_hdn",
+  "model_name": "hdn_prototype",
+  "seed": 11,
+  "dataset": {
+    "type": "torchvision",
+    "name": "cifar10",
+    "root": "./data",
+    "train_split": 0.9,
+    "use_test_as_valid": true,
+    "normalize": {
+      "mean": [0.4914, 0.4822, 0.4465],
+      "std": [0.2023, 0.1994, 0.2010]
+    }
+  },
+  "model": {
+    "hidden_dims": [128, 128],
+    "activation": "relu",
+    "backbone": {
+      "name": "small_cnn",
+      "channels": [32, 64],
+      "projection_dim": 128
+    },
+    "structural": {
+      "interval": 5,
+      "birth": {
+        "enabled": true,
+        "loss_threshold": 0.8,
+        "growth_amount": 16,
+        "max_width": 384
+      },
+      "split": {
+        "enabled": true,
+        "heterogeneity_threshold": 0.2,
+        "growth_amount": 8,
+        "max_width": 384
+      },
+      "deepen": {
+        "enabled": true,
+        "plateau_gap": 0.05,
+        "max_depth": 5
+      },
+      "prune": {
+        "enabled": true,
+        "usage_threshold": 0.01,
+        "min_width": 16
+      }
+    }
+  },
+  "training": {
+    "epochs": 30,
+    "batch_size": 128,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0005
+  },
+  "evaluation": {
+    "busiest_node_ablation": true,
+    "random_node_ablation": true,
+    "corruptions": [
+      {
+        "type": "gaussian_noise",
+        "std": 0.08
+      },
+      {
+        "type": "feature_dropout",
+        "probability": 0.1
+      }
+    ]
+  },
+  "ablation": {
+    "variants": ["no_balance", "no_split", "no_deepen", "no_prune"]
+  },
+  "logging": {
+    "output_dir": "logs"
+  }
+}

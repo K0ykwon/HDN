@@ -1,3 +1,14 @@
+Metadata-Version: 2.4
+Name: hdn
+Version: 0.1.0
+Summary: PyTorch prototype for Homeostatic Developmental Networks
+Requires-Python: >=3.12
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: torch>=2.2
+Requires-Dist: torchvision>=0.17
+Dynamic: license-file
+
 # HDN
 
 Homeostatic Developmental Networks in PyTorch.
