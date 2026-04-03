@@ -1,19 +1,20 @@
 {
   "approx_flops_per_example": 32768,
   "avg_active_slots": 1.0,
+  "avg_active_think_slots": 1.0,
   "avg_effective_depth": 1.0,
   "avg_slot_gate": 1.0,
   "avg_step_gate": 1.0,
   "dataset_name": "special_token_parity",
   "depth_difficulty_corr": 0.0,
-  "final_train_loss": 0.3731407430022955,
-  "final_val_accuracy": 0.8671875,
-  "final_val_f1": 0.8047595620155334,
-  "final_val_loss": 0.36068014800548553,
+  "final_train_loss": 0.38310724031180143,
+  "final_val_accuracy": 0.83984375,
+  "final_val_f1": 0.7413139119744301,
+  "final_val_loss": 0.3625286649912596,
   "model_name": "transformer",
   "parameter_count": 271362,
-  "peak_gpu_memory_mb": 0.0,
+  "peak_gpu_memory_mb": 23.4013671875,
   "run_name": "transformer_debug",
   "seed": 7,
-  "throughput": 6559.281660316753
+  "throughput": 74432.49648326251
 }

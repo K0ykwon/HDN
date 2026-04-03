@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+import os
 import re
 from pathlib import Path
 
@@ -46,9 +47,13 @@ class HuggingFaceTextConfig:
 
 
 TOKEN_PATTERN = re.compile(r"\w+|[^\w\s]", flags=re.UNICODE)
-HF_CACHE_DIR = Path("/workspaces/HDN/experiments/cache/huggingface")
+REPO_ROOT = Path(__file__).resolve().parents[3]
+HF_CACHE_DIR = Path(os.environ.get("TWR_HF_CACHE_DIR", REPO_ROOT / "experiments" / "cache" / "huggingface"))
 IMDB_ARROW_CACHE_DIR = Path(
-    "/home/codespace/.cache/huggingface/datasets/imdb/plain_text/0.0.0/e6281661ce1c48d982bc483cf8a173c1bbeb5d31"
+    os.environ.get(
+        "TWR_IMDB_ARROW_CACHE_DIR",
+        REPO_ROOT / "experiments" / "cache" / "huggingface" / "imdb_arrow",
+    )
 )
 
 

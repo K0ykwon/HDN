@@ -1,4 +1,5 @@
 {
+  "avg_active_think_slots": 16.0,
   "avg_slot_gate": 1.0,
   "avg_step_gate": 1.0,
   "depth_difficulty_corr": 0.0,
@@ -262,6 +263,24 @@
     2.0
   ],
   "slot_usage_histogram": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+  ],
+  "think_slot_usage_histogram": [
     1.0,
     1.0,
     1.0,
