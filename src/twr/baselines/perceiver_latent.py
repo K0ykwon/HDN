@@ -73,4 +73,6 @@ class PerceiverLatentBaseline(nn.Module):
             "slot_gates": torch.ones(batch_size, len(self.encoder.layers), encoded.size(1), device=tokens.device),
             "avg_active_slots": torch.full((1,), float(encoded.size(1)), device=tokens.device),
             "slot_histogram": torch.ones(encoded.size(1), device=tokens.device),
+            "avg_active_think_slots": torch.full((batch_size,), float(encoded.size(1)), device=tokens.device),
+            "think_slot_histogram": torch.ones(encoded.size(1), device=tokens.device),
         }

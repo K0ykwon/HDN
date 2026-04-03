@@ -15,5 +15,5 @@
   "peak_gpu_memory_mb": 0.0,
   "run_name": "mamba_placeholder_debug",
   "seed": 7,
-  "throughput": 6750.227451033416
+  "throughput": 13246.413404514386
 }

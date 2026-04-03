@@ -14,3 +14,9 @@ def test_load_experiment_merges_sections() -> None:
 def test_load_mamba_placeholder_experiment() -> None:
     config = load_experiment(Path("configs/experiment/mamba_placeholder_debug.yaml"))
     assert config["model"]["name"] == "mamba_placeholder"
+
+
+def test_load_count_compare_experiment() -> None:
+    config = load_experiment(Path("configs/experiment/twr_count_compare_adaptive.yaml"))
+    assert config["data"]["task"] == "count_compare"
+    assert config["train"]["epochs"] == 6

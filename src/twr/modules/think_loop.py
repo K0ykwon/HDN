@@ -13,6 +13,8 @@ class ThinkStats:
     step_gates: Tensor
     slot_gates: Tensor
     effective_depth: Tensor
+    avg_active_think_slots: Tensor
+    slot_gate_histogram: Tensor
 
 
 class ThinkLoop(nn.Module):
@@ -70,8 +72,15 @@ class ThinkLoop(nn.Module):
             slot_gates.append(slot_gate.squeeze(-1))
             effective_depth = effective_depth + step_gate.squeeze(-1)
 
+        step_tensor = torch.stack(step_gates, dim=1)
+        slot_tensor = torch.stack(slot_gates, dim=1)
+        avg_active_think_slots = (slot_tensor > 0.5).float().sum(dim=-1).mean(dim=1)
+        slot_gate_histogram = slot_tensor.mean(dim=(0, 1))
+
         return memory, ThinkStats(
-            step_gates=torch.stack(step_gates, dim=1),
-            slot_gates=torch.stack(slot_gates, dim=1),
+            step_gates=step_tensor,
+            slot_gates=slot_tensor,
             effective_depth=effective_depth,
+            avg_active_think_slots=avg_active_think_slots,
+            slot_gate_histogram=slot_gate_histogram,
         )

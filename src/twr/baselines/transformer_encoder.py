@@ -52,4 +52,6 @@ class TransformerEncoderBaseline(nn.Module):
             "slot_gates": ones.unsqueeze(1),
             "avg_active_slots": ones.mean().unsqueeze(0),
             "slot_histogram": ones.squeeze(-1),
+            "avg_active_think_slots": ones.squeeze(-1),
+            "think_slot_histogram": ones.squeeze(-1),
         }

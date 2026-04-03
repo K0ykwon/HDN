@@ -90,6 +90,7 @@ def run_epoch(
     throughput = ThroughputTracker()
     batch_records: list[dict[str, float]] = []
     slot_histograms: list[torch.Tensor] = []
+    think_slot_histograms: list[torch.Tensor] = []
     depth_values: list[torch.Tensor] = []
 
     if torch.cuda.is_available():
@@ -128,6 +129,7 @@ def run_epoch(
         step_gates = outputs["step_gates"].float()
         slot_gates = outputs["slot_gates"].float()
         slot_histograms.append(outputs["slot_histogram"].float().detach().cpu())
+        think_slot_histograms.append(outputs["think_slot_histogram"].float().detach().cpu())
         depth_values.append(outputs["effective_depth"].float().detach().cpu())
         record = {
             "loss": float(loss_breakdown.total_loss.item()),
@@ -139,6 +141,7 @@ def run_epoch(
             "effective_depth": float(outputs["effective_depth"].float().mean().item()),
             "avg_step_gate": float(step_gates.mean().item()),
             "avg_active_slots": float(outputs["avg_active_slots"].float().mean().item()),
+            "avg_active_think_slots": float(outputs["avg_active_think_slots"].float().mean().item()),
             "avg_slot_gate": float(slot_gates.mean().item()),
             "depth_difficulty_corr": difficulty_depth_correlation(
                 batch["difficulty"], outputs["effective_depth"]
@@ -150,6 +153,7 @@ def run_epoch(
     epoch_metrics = aggregate_epoch(batch_records)
     epoch_metrics["throughput"] = throughput.examples_per_second
     epoch_metrics["slot_histogram"] = torch.stack(slot_histograms).mean(dim=0).tolist()
+    epoch_metrics["think_slot_histogram"] = torch.stack(think_slot_histograms).mean(dim=0).tolist()
     epoch_metrics["depth_distribution"] = torch.cat(depth_values).tolist()
     if torch.cuda.is_available():
         epoch_metrics["peak_gpu_memory_mb"] = float(torch.cuda.max_memory_allocated(device) / (1024**2))
@@ -239,6 +243,7 @@ def train(config: dict[str, Any]) -> TrainingArtifacts:
                 "approx_flops_per_example": approx_flops,
                 "avg_effective_depth": val_metrics["effective_depth"],
                 "avg_active_slots": val_metrics["avg_active_slots"],
+                "avg_active_think_slots": val_metrics["avg_active_think_slots"],
                 "avg_step_gate": val_metrics["avg_step_gate"],
                 "avg_slot_gate": val_metrics["avg_slot_gate"],
                 "throughput": val_metrics["throughput"],
@@ -249,6 +254,8 @@ def train(config: dict[str, Any]) -> TrainingArtifacts:
                 "run_name": run_name,
                 "sample_wise_depth_distribution": val_metrics["depth_distribution"],
                 "slot_usage_histogram": val_metrics["slot_histogram"],
+                "think_slot_usage_histogram": val_metrics["think_slot_histogram"],
+                "avg_active_think_slots": val_metrics["avg_active_think_slots"],
                 "avg_step_gate": val_metrics["avg_step_gate"],
                 "avg_slot_gate": val_metrics["avg_slot_gate"],
                 "depth_difficulty_corr": val_metrics["depth_difficulty_corr"],

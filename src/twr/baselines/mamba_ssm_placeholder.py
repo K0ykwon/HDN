@@ -67,4 +67,6 @@ class MambaSSMPlaceholder(nn.Module):
             "slot_gates": torch.ones(batch_size, len(self.blocks), seq_len, device=tokens.device),
             "avg_active_slots": torch.full((1,), float(seq_len), device=tokens.device),
             "slot_histogram": torch.ones(seq_len, device=tokens.device),
+            "avg_active_think_slots": torch.full((batch_size,), float(seq_len), device=tokens.device),
+            "think_slot_histogram": torch.ones(seq_len, device=tokens.device),
         }

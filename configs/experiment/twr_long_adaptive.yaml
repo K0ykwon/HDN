@@ -1,0 +1,5 @@
+model: twr_small_long.yaml
+data: count_compare_long.yaml
+train: validation_long.yaml
+run:
+  name: twr_long_adaptive

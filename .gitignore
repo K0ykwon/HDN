@@ -6,3 +6,6 @@ logs/*
 results/*
 !logs/.gitkeep
 !results/.gitkeep
+
+experiments/*
+!experiments/.gitkeep

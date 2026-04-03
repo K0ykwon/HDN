@@ -25,3 +25,5 @@ def test_twr_forward_shapes() -> None:
     assert outputs["step_gates"].shape == (4, 2)
     assert outputs["slot_gates"].shape == (4, 2, 8)
     assert outputs["slot_histogram"].shape == (8,)
+    assert outputs["think_slot_histogram"].shape == (8,)
+    assert outputs["avg_active_think_slots"].shape == (4,)

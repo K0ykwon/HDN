@@ -1,0 +1,10 @@
+model: twr_small_long.yaml
+data: count_compare_long.yaml
+train: validation_long.yaml
+overrides:
+  model:
+    think_steps: 1
+    adaptive_depth: false
+    use_slot_gate: false
+run:
+  name: twr_long_no_think

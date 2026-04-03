@@ -1,0 +1,5 @@
+model: mamba_placeholder.yaml
+data: count_compare.yaml
+train: validation.yaml
+run:
+  name: mamba_placeholder_count_compare

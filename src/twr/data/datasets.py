@@ -17,6 +17,8 @@ class SyntheticSequenceConfig:
     batch_size: int
     task: str = "special_token_parity"
     special_token: int = 1
+    compare_token_a: int = 1
+    compare_token_b: int = 2
 
 
 class SyntheticSequenceDataset(Dataset[dict[str, Tensor]]):
@@ -31,16 +33,22 @@ class SyntheticSequenceDataset(Dataset[dict[str, Tensor]]):
             size=(size, config.seq_len),
             generator=generator,
         )
-        if config.task != "special_token_parity":
+        if config.task == "special_token_parity":
+            counts = (tokens == config.special_token).sum(dim=1)
+            labels = torch.remainder(counts, config.num_classes)
+            difficulty = counts.float() / max(config.seq_len, 1)
+        elif config.task == "count_compare":
+            counts_a = (tokens == config.compare_token_a).sum(dim=1)
+            counts_b = (tokens == config.compare_token_b).sum(dim=1)
+            labels = (counts_a > counts_b).long()
+            margin = (counts_a - counts_b).abs().float()
+            difficulty = 1.0 - margin / max(config.seq_len, 1)
+        else:
             raise ValueError(f"Unsupported synthetic task: {config.task}")
-
-        counts = (tokens == config.special_token).sum(dim=1)
-        labels = torch.remainder(counts, config.num_classes)
-        difficulty = counts.float() / max(config.seq_len, 1)
 
         self.tokens = tokens
         self.labels = labels.long()
-        self.difficulty = difficulty
+        self.difficulty = difficulty.clamp(0.0, 1.0)
 
     def __len__(self) -> int:
         return self.tokens.size(0)

@@ -84,4 +84,6 @@ class TWRLM(nn.Module):
             "slot_gates": think_stats.slot_gates,
             "avg_active_slots": write_stats.avg_active_slots.unsqueeze(0),
             "slot_histogram": write_stats.slot_histogram,
+            "avg_active_think_slots": think_stats.avg_active_think_slots,
+            "think_slot_histogram": think_stats.slot_gate_histogram,
         }
