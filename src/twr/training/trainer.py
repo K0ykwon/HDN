@@ -11,7 +11,12 @@ from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import DataLoader
 
 from src.twr.data.collators import collate_batch
-from src.twr.data.datasets import SyntheticSequenceConfig, SyntheticSequenceDataset
+from src.twr.data.datasets import (
+    HuggingFaceTextConfig,
+    HuggingFaceTextDataset,
+    SyntheticSequenceConfig,
+    SyntheticSequenceDataset,
+)
 from src.twr.eval.analysis import difficulty_depth_correlation
 from src.twr.eval.metrics import binary_f1, classification_accuracy
 from src.twr.models.factory import build_model
@@ -28,18 +33,28 @@ class TrainingArtifacts:
 
 
 def build_dataloaders(data_config: dict[str, Any], seed: int) -> tuple[DataLoader, DataLoader]:
-    config = SyntheticSequenceConfig(**data_config)
-    train_dataset = SyntheticSequenceDataset(size=config.train_size, config=config, seed=seed)
-    val_dataset = SyntheticSequenceDataset(size=config.val_size, config=config, seed=seed + 1)
+    data_kind = data_config.get("kind", "synthetic")
+    if data_kind == "synthetic":
+        config = SyntheticSequenceConfig(**data_config)
+        train_dataset = SyntheticSequenceDataset(size=config.train_size, config=config, seed=seed)
+        val_dataset = SyntheticSequenceDataset(size=config.val_size, config=config, seed=seed + 1)
+        batch_size = config.batch_size
+    elif data_kind == "hf_text":
+        config = HuggingFaceTextConfig(**{k: v for k, v in data_config.items() if k != "kind"})
+        train_dataset = HuggingFaceTextDataset(split="train", config=config)
+        val_dataset = HuggingFaceTextDataset(split="val", config=config)
+        batch_size = config.batch_size
+    else:
+        raise ValueError(f"Unsupported data kind: {data_kind}")
     train_loader = DataLoader(
         train_dataset,
-        batch_size=config.batch_size,
+        batch_size=batch_size,
         shuffle=True,
         collate_fn=collate_batch,
     )
     val_loader = DataLoader(
         val_dataset,
-        batch_size=config.batch_size,
+        batch_size=batch_size,
         shuffle=False,
         collate_fn=collate_batch,
     )

@@ -1,0 +1,6 @@
+name: transformer
+embed_dim: 64
+num_layers: 2
+num_heads: 4
+mlp_hidden_dim: 128
+dropout: 0.1

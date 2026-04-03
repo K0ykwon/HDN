@@ -1,0 +1,13 @@
+name: twr
+embed_dim: 64
+event_dim: 64
+slots: 8
+slot_dim: 64
+think_steps: 4
+mixer_rank: 2
+mlp_hidden_dim: 128
+dropout: 0.1
+adaptive_depth: true
+use_slot_gate: true
+write_variant: soft_write
+use_token_residual: false
