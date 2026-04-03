@@ -1,0 +1,8 @@
+model: twr_v1.yaml
+data: synthetic_parity.yaml
+train: debug.yaml
+overrides:
+  model:
+    write_variant: stronger_residual_write
+run:
+  name: twr_write_residual

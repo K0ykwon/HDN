@@ -1,1 +1,2 @@
-"""HDN package."""
+"""Top-level source package."""
+

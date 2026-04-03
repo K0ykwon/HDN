@@ -1,0 +1,19 @@
+{
+  "approx_flops_per_example": 0,
+  "avg_active_slots": 16.0,
+  "avg_effective_depth": 2.0,
+  "avg_slot_gate": 1.0,
+  "avg_step_gate": 1.0,
+  "dataset_name": "special_token_parity",
+  "depth_difficulty_corr": 0.0,
+  "final_train_loss": 0.5354247707873583,
+  "final_val_accuracy": 0.75390625,
+  "final_val_f1": 0.6045805402100086,
+  "final_val_loss": 0.5782560035586357,
+  "model_name": "mamba_placeholder",
+  "parameter_count": 90498,
+  "peak_gpu_memory_mb": 0.0,
+  "run_name": "mamba_placeholder_debug",
+  "seed": 7,
+  "throughput": 6750.227451033416
+}

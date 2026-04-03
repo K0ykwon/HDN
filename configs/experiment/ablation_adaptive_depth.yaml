@@ -1,0 +1,8 @@
+model: twr_v1.yaml
+data: synthetic_parity.yaml
+train: debug.yaml
+overrides:
+  model:
+    adaptive_depth: true
+run:
+  name: twr_adaptive_depth

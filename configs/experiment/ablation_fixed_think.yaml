@@ -1,0 +1,9 @@
+model: twr_v1.yaml
+data: synthetic_parity.yaml
+train: debug.yaml
+overrides:
+  model:
+    adaptive_depth: false
+    use_slot_gate: true
+run:
+  name: twr_fixed_think

@@ -1,0 +1,5 @@
+model: twr_v1.yaml
+data: synthetic_parity.yaml
+train: debug.yaml
+run:
+  name: twr_debug

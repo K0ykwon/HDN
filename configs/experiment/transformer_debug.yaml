@@ -1,0 +1,5 @@
+model: transformer_small.yaml
+data: synthetic_parity.yaml
+train: debug.yaml
+run:
+  name: transformer_debug

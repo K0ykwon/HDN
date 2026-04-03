@@ -1,0 +1,19 @@
+{
+  "approx_flops_per_example": 32768,
+  "avg_active_slots": 1.0,
+  "avg_effective_depth": 1.0,
+  "avg_slot_gate": 1.0,
+  "avg_step_gate": 1.0,
+  "dataset_name": "special_token_parity",
+  "depth_difficulty_corr": 0.0,
+  "final_train_loss": 0.3731407430022955,
+  "final_val_accuracy": 0.8671875,
+  "final_val_f1": 0.8047595620155334,
+  "final_val_loss": 0.36068014800548553,
+  "model_name": "transformer",
+  "parameter_count": 271362,
+  "peak_gpu_memory_mb": 0.0,
+  "run_name": "transformer_debug",
+  "seed": 7,
+  "throughput": 6559.281660316753
+}

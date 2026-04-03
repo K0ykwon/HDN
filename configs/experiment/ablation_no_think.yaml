@@ -1,0 +1,10 @@
+model: twr_v1.yaml
+data: synthetic_parity.yaml
+train: debug.yaml
+overrides:
+  model:
+    think_steps: 1
+    adaptive_depth: false
+    use_slot_gate: false
+run:
+  name: twr_no_think

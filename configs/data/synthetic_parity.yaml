@@ -1,0 +1,8 @@
+vocab_size: 32
+seq_len: 16
+num_classes: 2
+train_size: 512
+val_size: 256
+batch_size: 32
+task: special_token_parity
+special_token: 1

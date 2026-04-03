@@ -3,14 +3,15 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "hdn"
+name = "twr-lm"
 version = "0.1.0"
-description = "PyTorch prototype for Homeostatic Developmental Networks"
+description = "PyTorch research scaffold for Tokenless Write-Think-Read Latent Machines"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
   "torch>=2.2",
   "torchvision>=0.17",
+  "PyYAML>=6.0",
 ]
 
 [tool.setuptools]
@@ -18,4 +19,4 @@ package-dir = {"" = "."}
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["src*"]
+include = ["src*", "src.twr*"]

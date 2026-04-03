@@ -1,39 +1,44 @@
-# HDN
+# TWR-LM
 
-Homeostatic Developmental Networks in PyTorch.
+Tokenless Write-Think-Read Latent Machine research scaffold in PyTorch.
 
-This repository contains a PyTorch implementation of Homeostatic Developmental Networks, where hidden structure emerges during training instead of being fully designed beforehand. Starting from a minimal input-to-output network, HDN progressively performs birth, split, deepen, and prune operations to balance functional load across nodes while preserving specialization.
+The repo is organized around one config-driven training stack that supports:
+- TWR-LM as the primary tokenless memory backbone
+- comparable baselines under the same trainer
+- synthetic sequence classification for fast iteration
+- structured experiment logging, checkpoints, and run summaries
 
-## Current Status
-
-The repository now includes a broader research scaffold covering the full planned pipeline:
-
-- config-driven training and study entrypoints
-- toy and torchvision dataset support
-- baseline feedforward classifier plus HDN prototype with structural mutation
-- birth, split, deepen, and prune event scheduling
-- balance, efficiency, and robustness metrics
-- corruption and node-ablation evaluation hooks
-- ablation-study execution flow
-
-## Quick Start
-
-Install dependencies:
+## Install
 
 ```bash
 pip install -e .
 ```
 
-Run a toy baseline:
+## Quick Start
+
+Run the default TWR debug experiment:
 
 ```bash
-python scripts/train.py --config configs/toy_xor.json
+python scripts/train.py --experiment configs/experiment/twr_debug.yaml
 ```
 
-Run an HDN study with ablations:
+Run the Transformer baseline:
 
 ```bash
-python scripts/train.py --config configs/mnist_hdn.json --mode study
+python scripts/train.py --experiment configs/experiment/transformer_debug.yaml
 ```
 
-Additional plans and project scope are documented in `plan.md` and `HDN_project_overview.md`.
+Run the Mamba/SSM placeholder baseline:
+
+```bash
+python scripts/train.py --experiment configs/experiment/mamba_placeholder_debug.yaml
+```
+
+Artifacts are written under `experiments/runs/<run_name>/`.
+
+Each run saves:
+- `config_snapshot.json`
+- `metrics.jsonl`
+- `summary.json`
+- `analysis.json`
+- `checkpoint.pt`

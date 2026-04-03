@@ -8,42 +8,30 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.training.engine import run_experiment
-from src.training.engine import run_study
-from src.utils.config import load_config
+from src.twr.training.trainer import train
+from src.twr.utils.config import load_experiment
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run an HDN experiment from a JSON config.")
-    parser.add_argument("--config", required=True, help="Path to the JSON config file.")
+    parser = argparse.ArgumentParser(description="Train TWR-LM or a baseline from an experiment config.")
     parser.add_argument(
-        "--mode",
-        choices=["train", "study"],
-        default="train",
-        help="Run a single experiment or an ablation study bundle.",
+        "--experiment",
+        required=True,
+        help="Path to an experiment YAML, for example configs/experiment/twr_debug.yaml",
     )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    config = load_config(args.config)
-    if args.mode == "study":
-        artifacts = run_study(config)
-        print(f"Study directory: {artifacts['run_dir']}")
-        print(f"Ablation runs: {len(artifacts['study_results']['ablations'])}")
-        return
-
-    artifacts = run_experiment(config)
-    final_metrics = artifacts.metrics["final_metrics"]
-
+    config = load_experiment(args.experiment)
+    artifacts = train(config)
+    summary = artifacts.summary
     print(f"Run directory: {artifacts.run_dir}")
     print(
-        "Final metrics: "
-        f"train_loss={final_metrics['train_loss']:.4f}, "
-        f"train_accuracy={final_metrics['train_accuracy']:.4f}, "
-        f"valid_loss={final_metrics['valid_loss']:.4f}, "
-        f"valid_accuracy={final_metrics['valid_accuracy']:.4f}"
+        f"Best val loss={summary['final_val_loss']:.4f}, "
+        f"val acc={summary['final_val_accuracy']:.4f}, "
+        f"avg depth={summary['avg_effective_depth']:.3f}"
     )
 
 

@@ -1,0 +1,6 @@
+name: perceiver
+embed_dim: 128
+latent_slots: 16
+latent_dim: 128
+num_layers: 2
+dropout: 0.1

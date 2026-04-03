@@ -1,0 +1,5 @@
+model: perceiver_small.yaml
+data: synthetic_parity.yaml
+train: debug.yaml
+run:
+  name: perceiver_debug

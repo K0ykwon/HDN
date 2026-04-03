@@ -1,0 +1,5 @@
+model: mamba_placeholder.yaml
+data: synthetic_parity.yaml
+train: debug.yaml
+run:
+  name: mamba_placeholder_debug
