@@ -197,7 +197,8 @@ def train(config: dict[str, Any]) -> TrainingArtifacts:
         warmup_fraction=float(train_config.get("warmup_fraction", 0.0)),
     )
 
-    run_name = run_config.get("name") or f"{model_config['name']}_{data_config['task']}_seed{seed}"
+    dataset_name = data_config.get("task", data_config.get("dataset_name", "dataset"))
+    run_name = run_config.get("name") or f"{model_config['name']}_{dataset_name}_seed{seed}"
     run_dir = ensure_dir(Path("experiments/runs") / run_name)
     logger = JsonlLogger(run_dir / "metrics.jsonl")
     write_json(run_dir / "config_snapshot.json", config)
@@ -248,7 +249,7 @@ def train(config: dict[str, Any]) -> TrainingArtifacts:
             best_summary = {
                 "run_name": run_name,
                 "model_name": model_config["name"],
-                "dataset_name": data_config["task"],
+                "dataset_name": dataset_name,
                 "seed": seed,
                 "final_train_loss": train_metrics["loss"],
                 "final_val_loss": val_metrics["loss"],
