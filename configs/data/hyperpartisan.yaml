@@ -1,0 +1,14 @@
+kind: hf_text
+dataset_name: pietrolesci/hyperpartisan_news_detection
+text_field: text
+label_field: hyperpartisan
+seq_len: 512
+vocab_size: 8192
+num_classes: 2
+train_size: 1200
+val_size: 400
+batch_size: 8
+train_split: train
+val_split: validation
+lowercase: true
+streaming: true

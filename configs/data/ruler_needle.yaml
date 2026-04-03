@@ -1,0 +1,10 @@
+kind: ruler_needle
+vocab_size: 256
+seq_len: 512
+num_classes: 16
+train_size: 2048
+val_size: 512
+batch_size: 32
+num_pairs: 24
+num_keys: 32
+filler_span: 24

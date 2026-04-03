@@ -1,0 +1,11 @@
+kind: longbench
+benchmark_name: trec
+seq_len: 512
+vocab_size: 8192
+num_classes: 50
+train_size: 150
+val_size: 50
+batch_size: 8
+split_seed: 7
+lowercase: true
+use_e_variant: false

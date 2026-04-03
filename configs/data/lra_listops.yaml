@@ -1,0 +1,9 @@
+kind: lra_listops
+vocab_size: 32
+seq_len: 256
+num_classes: 10
+train_size: 2048
+val_size: 512
+batch_size: 32
+max_depth: 5
+max_args: 4

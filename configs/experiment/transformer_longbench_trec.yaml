@@ -1,0 +1,5 @@
+model: transformer_text_small.yaml
+data: longbench_trec.yaml
+train: benchmark.yaml
+run:
+  name: transformer_longbench_trec

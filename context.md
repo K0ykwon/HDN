@@ -258,3 +258,180 @@ Files:
    - slot usage behavior
    - cache-path portability
 5. If desired, promote `scripts/analyze_results.py` into a standard post-run pipeline.
+
+## Update: Benchmark Implementation In Progress
+
+This section records the later work started after the earlier summary above.
+
+### New benchmark paths added
+
+The following benchmark-oriented files were added:
+
+- `configs/data/lra_listops.yaml`
+- `configs/data/ruler_needle.yaml`
+- `configs/data/longbench_trec.yaml`
+- `configs/data/hyperpartisan.yaml`
+- `configs/train/benchmark.yaml`
+- `configs/experiment/twr_lra_listops.yaml`
+- `configs/experiment/transformer_lra_listops.yaml`
+- `configs/experiment/twr_ruler_needle.yaml`
+- `configs/experiment/transformer_ruler_needle.yaml`
+- `configs/experiment/twr_longbench_trec.yaml`
+- `configs/experiment/transformer_longbench_trec.yaml`
+- `configs/experiment/twr_hyperpartisan.yaml`
+- `configs/experiment/transformer_hyperpartisan.yaml`
+- `scripts/run_benchmark_suite.py`
+
+### Code changes made for benchmark support
+
+Updated:
+- `src/twr/data/datasets.py`
+- `src/twr/training/trainer.py`
+- `scripts/analyze_results.py`
+
+What was implemented:
+
+1. `LRA`:
+   - Added a synthetic `lra_listops` dataset path.
+   - This is a ListOps-style long-range classification generator compatible with the current classification-only trainer.
+
+2. `RULER`:
+   - Added a synthetic `ruler_needle` dataset path.
+   - This is a RULER-style long-context key-value retrieval classification task.
+
+3. `LongBench`:
+   - Added direct zip-backed loading for `THUDM/LongBench` via `huggingface_hub`.
+   - Used `trec` from LongBench as the first supported task because it is a fixed-class classification task and fits the current classifier head.
+   - The loader avoids the current `datasets` package issue where `LongBench.py` script-based loading fails.
+
+4. `Hyperpartisan`:
+   - Added a streaming Hugging Face dataset path for `pietrolesci/hyperpartisan_news_detection`.
+   - Validation split was confirmed to be `validation`, not `test`.
+
+5. Analysis outputs:
+   - Extended `scripts/analyze_results.py` to recognize:
+     - `lra`
+     - `ruler`
+     - `longbench`
+     - `hyperpartisan`
+     - `smoke`
+   - Added per-run training curve image generation and benchmark summary/table image generation.
+
+### Parameter-count constraint check
+
+The intended benchmark comparison uses:
+- `configs/model/twr_text_small.yaml`
+- `configs/model/transformer_text_small.yaml`
+
+A direct parameter-count probe for a 512-length text setup showed:
+- `twr`: `675,204`
+- `transformer`: `624,130`
+
+So the baseline Transformer is smaller than TWR, satisfying the stated comparison constraint.
+
+### Dataset inspection results
+
+Confirmed during implementation:
+
+- LongBench repo contains:
+  - `data.zip`
+  - `data/trec.jsonl`
+  - `data/passage_count.jsonl`
+- `passage_count` answers are variable integers and do not expose a fixed class list, so it was not used as the first classification integration target.
+- `trec` exposes fixed `all_classes`, so it was chosen for the current LongBench integration.
+- Hyperpartisan streaming load works with:
+  - dataset: `pietrolesci/hyperpartisan_news_detection`
+  - train split: `train`
+  - validation split: `validation`
+
+### Smoke checks completed
+
+Targeted dataloader smoke checks succeeded for:
+- `lra_listops`
+- `ruler_needle`
+- `longbench/trec`
+- `hyperpartisan`
+
+Small end-to-end smoke training runs also succeeded:
+
+- `smoke_twr_lra_listops`
+  - epoch 1 val acc: `0.09375`
+- `smoke_transformer_longbench_trec`
+  - epoch 1 val acc: `0.125`
+
+Note:
+- `pytest -q` did not run cleanly because the environment did not expose `src` on `PYTHONPATH` during test collection.
+- The failure was:
+  - `ModuleNotFoundError: No module named 'src'`
+- This appears to be an environment/test invocation issue, not a benchmark-code import issue, because direct `PYTHONPATH=.` smoke checks succeeded.
+
+### Full benchmark suite run attempt
+
+The new suite script was launched:
+- `PYTHONPATH=. python3 scripts/run_benchmark_suite.py`
+
+Completed runs before interruption/failure:
+
+1. `twr_lra_listops`
+   - val acc: `0.1035`
+   - val loss: `2.3368`
+   - params: `137100`
+
+2. `transformer_lra_listops`
+   - val acc: `0.0820`
+   - val loss: `2.3024`
+   - params: `86026`
+
+3. `twr_ruler_needle`
+   - val acc: `0.0801`
+   - val loss: `2.9105`
+   - params: `168210`
+
+4. `transformer_ruler_needle`
+   - val acc: `0.0645`
+   - val loss: `2.7753`
+   - params: `117136`
+
+5. `twr_longbench_trec`
+   - val acc: `0.1800`
+   - val loss: `4.4057`
+   - params: `678324`
+
+### Failure encountered during full suite
+
+The suite failed on:
+- `configs/experiment/transformer_longbench_trec.yaml`
+
+Observed runtime error:
+
+```text
+RuntimeError: stack expects each tensor to be equal size, but got [8] at entry 0 and [6] at entry 18
+```
+
+Root cause:
+- `TransformerEncoderBaseline.forward()` currently returns:
+  - `slot_histogram: ones.squeeze(-1)`
+  - `think_slot_histogram: ones.squeeze(-1)`
+- That makes the histogram shape depend on the batch size.
+- `trainer.run_epoch()` expects a fixed-width histogram across batches and stacks them with:
+  - `torch.stack(slot_histograms)`
+- The last short batch on LongBench caused the stack failure.
+
+### Important state at interruption
+
+- The attempted Transformer histogram-shape bug fix was started but **was not applied** because the turn was interrupted.
+- Current transformer file still has the old batch-size-dependent histogram outputs:
+  - `src/twr/baselines/transformer_encoder.py`
+
+### Immediate next action
+
+Resume from here:
+
+1. Fix `src/twr/baselines/transformer_encoder.py` so `slot_histogram` and `think_slot_histogram` are fixed-size tensors independent of batch size.
+2. Re-run:
+   - `PYTHONPATH=. python3 scripts/run_benchmark_suite.py`
+3. Confirm remaining runs finish:
+   - `transformer_longbench_trec`
+   - `twr_hyperpartisan`
+   - `transformer_hyperpartisan`
+4. Re-run or finish `scripts/analyze_results.py` so all requested image outputs are regenerated from the completed suite.

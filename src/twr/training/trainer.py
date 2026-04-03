@@ -14,6 +14,12 @@ from src.twr.data.collators import collate_batch
 from src.twr.data.datasets import (
     HuggingFaceTextConfig,
     HuggingFaceTextDataset,
+    ListOpsConfig,
+    ListOpsDataset,
+    LongBenchConfig,
+    LongBenchDataset,
+    RulerNeedleConfig,
+    RulerNeedleDataset,
     SyntheticSequenceConfig,
     SyntheticSequenceDataset,
 )
@@ -39,10 +45,25 @@ def build_dataloaders(data_config: dict[str, Any], seed: int) -> tuple[DataLoade
         train_dataset = SyntheticSequenceDataset(size=config.train_size, config=config, seed=seed)
         val_dataset = SyntheticSequenceDataset(size=config.val_size, config=config, seed=seed + 1)
         batch_size = config.batch_size
+    elif data_kind == "lra_listops":
+        config = ListOpsConfig(**{k: v for k, v in data_config.items() if k != "kind"})
+        train_dataset = ListOpsDataset(size=config.train_size, config=config, seed=seed)
+        val_dataset = ListOpsDataset(size=config.val_size, config=config, seed=seed + 1)
+        batch_size = config.batch_size
+    elif data_kind == "ruler_needle":
+        config = RulerNeedleConfig(**{k: v for k, v in data_config.items() if k != "kind"})
+        train_dataset = RulerNeedleDataset(size=config.train_size, config=config, seed=seed)
+        val_dataset = RulerNeedleDataset(size=config.val_size, config=config, seed=seed + 1)
+        batch_size = config.batch_size
     elif data_kind == "hf_text":
         config = HuggingFaceTextConfig(**{k: v for k, v in data_config.items() if k != "kind"})
         train_dataset = HuggingFaceTextDataset(split="train", config=config)
         val_dataset = HuggingFaceTextDataset(split="val", config=config)
+        batch_size = config.batch_size
+    elif data_kind == "longbench":
+        config = LongBenchConfig(**{k: v for k, v in data_config.items() if k != "kind"})
+        train_dataset = LongBenchDataset(split="train", config=config)
+        val_dataset = LongBenchDataset(split="val", config=config)
         batch_size = config.batch_size
     else:
         raise ValueError(f"Unsupported data kind: {data_kind}")

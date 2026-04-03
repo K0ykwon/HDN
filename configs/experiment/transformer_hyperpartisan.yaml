@@ -1,0 +1,5 @@
+model: transformer_text_small.yaml
+data: hyperpartisan.yaml
+train: benchmark.yaml
+run:
+  name: transformer_hyperpartisan
