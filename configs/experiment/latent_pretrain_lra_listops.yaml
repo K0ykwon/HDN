@@ -1,0 +1,5 @@
+model: latent_encoder_small.yaml
+data: lra_listops.yaml
+train: latent_pretrain.yaml
+run:
+  name: latent_pretrain_lra_listops

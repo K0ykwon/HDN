@@ -1,0 +1,21 @@
+{
+  "approx_flops_per_example": 33554432,
+  "avg_active_slots": 253.0,
+  "avg_active_think_slots": 16.0,
+  "avg_effective_depth": 4.0,
+  "avg_slot_gate": 1.0,
+  "avg_step_gate": 1.0,
+  "dataset_name": "pietrolesci/hyperpartisan_news_detection",
+  "depth_difficulty_corr": 0.0,
+  "epoch": 11,
+  "final_train_loss": 0.01206331027361254,
+  "final_val_accuracy": 0.5175,
+  "final_val_f1": 0.6154657691717148,
+  "final_val_loss": 3.717370722591877,
+  "model_name": "twr",
+  "parameter_count": 1810818,
+  "peak_gpu_memory_mb": 58.76708984375,
+  "run_name": "twr_backbone_hyperpartisan_full",
+  "seed": 7,
+  "throughput": 5051.823243558463
+}

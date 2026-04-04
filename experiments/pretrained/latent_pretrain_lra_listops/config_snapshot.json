@@ -1,0 +1,29 @@
+{
+  "data": {
+    "batch_size": 32,
+    "kind": "lra_listops",
+    "max_args": 4,
+    "max_depth": 5,
+    "num_classes": 10,
+    "seq_len": 256,
+    "train_size": 2048,
+    "val_size": 512,
+    "vocab_size": 32
+  },
+  "model": {
+    "dropout": 0.1,
+    "embed_dim": 128,
+    "slot_dim": 128,
+    "stride": 4,
+    "window_size": 8
+  },
+  "run": {
+    "name": "latent_pretrain_lra_listops"
+  },
+  "train": {
+    "epochs": 6,
+    "lr": 0.0003,
+    "seed": 7,
+    "weight_decay": 0.01
+  }
+}

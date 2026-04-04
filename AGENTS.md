@@ -1,21 +1,21 @@
 # AGENTS.md
 
 ## Project
-TWR-LM (Tokenless Write-Think-Read Latent Machine)
+TWR-LM
 
-## Goal
-Implement a research codebase for a tokenless sequence model that:
-1. Encodes input tokens as transient events.
-2. Writes events into a small latent memory bank.
-3. Discards token representations after write.
-4. Runs iterative computation only on latent memory.
-5. Uses adaptive think depth and slot-wise gating.
-6. Supports controlled experiments, baselines, ablations, and reproducible logging.
+## Current Goal
+Build and evaluate a `tokenless latent backbone` that can compete with Transformer baselines while keeping the persistent post-compression state in latent space rather than token space.
 
-## Non-negotiable architecture constraints
-- Do not keep token-wise hidden states as the persistent model state after the write phase.
-- The persistent state after write must be only the latent memory tensor.
-- The v1 model should prioritize simplicity and debuggability over novelty.
-- The codebase must be structured for experiments first, not demos first.
-- All new code should be typed where practical and written in clear PyTorch.
-- Prefer small, composable modules over large monolithic files.
+## Current Mainline Architecture
+1. Encode tokens into overlapping latent windows.
+2. Discard token-wise persistent states after compression.
+3. Run shared latent refinement and hierarchical merge only on latent representations.
+4. Read outputs with multiscale learned queries.
+5. Optimize for parameter efficiency, reproducible benchmarking, and baseline comparison.
+
+## Non-Negotiable Constraints
+- Do not keep token-wise hidden states as the persistent backbone state after compression.
+- Keep the codebase experiment-first.
+- Prefer small, composable PyTorch modules.
+- Favor reproducible configs, benchmark comparability, and simple ablations over speculative complexity.
+- Treat the old write/think/slot-gate design as historical, not as the default implementation target.

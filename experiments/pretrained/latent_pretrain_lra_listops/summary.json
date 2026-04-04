@@ -1,0 +1,11 @@
+{
+  "encoder_path": "/home/dause/Desktop/TWR-LM/experiments/pretrained/latent_pretrain_lra_listops/encoder.pt",
+  "final_train_loss": 0.1312685894081369,
+  "final_val_loss": 0.08194910315796733,
+  "final_val_token_accuracy": 0.9971323758363724,
+  "latent_dim": 128,
+  "run_name": "latent_pretrain_lra_listops",
+  "seed": 7,
+  "stride": 4,
+  "window_size": 8
+}

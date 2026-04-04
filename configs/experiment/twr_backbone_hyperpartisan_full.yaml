@@ -1,0 +1,5 @@
+model: twr_backbone_long_full.yaml
+data: hyperpartisan.yaml
+train: benchmark_full.yaml
+run:
+  name: twr_backbone_hyperpartisan_full

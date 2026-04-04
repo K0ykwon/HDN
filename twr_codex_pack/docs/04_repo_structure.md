@@ -1,66 +1,11 @@
-# Suggested Repository Structure
+# Archived Repo Structure
 
-```text
-repo/
-  AGENTS.md
-  README.md
-  requirements.txt
-  pyproject.toml
-  configs/
-    model/
-      twr_v1.yaml
-      transformer_small.yaml
-      perceiver_small.yaml
-    data/
-      lra_listops.yaml
-      lra_text.yaml
-      lra_retrieval.yaml
-    train/
-      default.yaml
-      debug.yaml
-    experiment/
-      twr_listops_debug.yaml
-      twr_text_core.yaml
-      twr_retrieval_core.yaml
-      ablation_no_think.yaml
-      ablation_no_slot_gate.yaml
-  src/
-    twr/
-      __init__.py
-      models/
-        twr_lm.py
-      modules/
-        event_encoder.py
-        latent_memory.py
-        sequential_write.py
-        refine_block.py
-        think_loop.py
-        readout.py
-      baselines/
-        transformer_encoder.py
-        perceiver_latent.py
-      data/
-        datasets.py
-        collators.py
-      training/
-        trainer.py
-        losses.py
-      eval/
-        metrics.py
-        analysis.py
-      utils/
-        config.py
-        logging.py
-        seed.py
-        profiling.py
-  scripts/
-    train.py
-    evaluate.py
-    run_ablation.py
-  experiments/
-    README.md
-  tests/
-    test_twr_forward.py
-    test_write_module.py
-    test_config_loading.py
-```
+The module layout described in the original pack is outdated.
+
+The live TWR path is now:
+
+- `src/twr/models/twr_lm.py`
+- `src/twr/modules/latent_encoder.py`
+- `src/twr/modules/latent_backbone.py`
+
+The old `event_encoder.py`, `latent_memory.py`, `sequential_write.py`, `refine_block.py`, and `think_loop.py` files are no longer part of the active implementation.

@@ -108,6 +108,31 @@ LONGBENCH_CACHE_DIR = Path(os.environ.get("TWR_LONGBENCH_CACHE_DIR", HF_CACHE_DI
 _NORMALIZE_WHITESPACE_RE = re.compile(r"\s+")
 
 
+def _dataset_snapshot_dir() -> Path:
+    path = REPO_ROOT / "experiments" / "cache" / "dataset_snapshots"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def _snapshot_key(parts: list[str]) -> str:
+    joined = "||".join(parts)
+    return hashlib.blake2b(joined.encode("utf-8"), digest_size=10).hexdigest()
+
+
+def _load_snapshot(path: Path) -> dict[str, Tensor] | None:
+    if not path.exists():
+        return None
+    payload = torch.load(path, map_location="cpu")
+    if not isinstance(payload, dict):
+        return None
+    return payload
+
+
+def _save_snapshot(path: Path, payload: dict[str, Tensor]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(payload, path)
+
+
 def hash_token(token: str, vocab_size: int) -> int:
     digest = hashlib.blake2b(token.encode("utf-8"), digest_size=8).digest()
     value = int.from_bytes(digest, byteorder="big")
@@ -241,6 +266,25 @@ class HuggingFaceTextDataset(Dataset[dict[str, Tensor]]):
 
     def __init__(self, split: str, config: HuggingFaceTextConfig) -> None:
         super().__init__()
+        snapshot_path = _dataset_snapshot_dir() / (
+            f"hf_text_{_snapshot_key([
+                config.dataset_name,
+                split,
+                config.text_field,
+                config.label_field,
+                str(config.seq_len),
+                str(config.vocab_size),
+                str(config.train_size),
+                str(config.val_size),
+                str(config.lowercase),
+            ])}.pt"
+        )
+        snapshot = _load_snapshot(snapshot_path)
+        if snapshot is not None:
+            self.tokens = snapshot["tokens"]
+            self.labels = snapshot["labels"]
+            self.difficulty = snapshot["difficulty"]
+            return
         dataset = load_hf_rows(config=config, split=split)
 
         tokens: list[Tensor] = []
@@ -261,6 +305,14 @@ class HuggingFaceTextDataset(Dataset[dict[str, Tensor]]):
         self.tokens = torch.stack(tokens, dim=0)
         self.labels = torch.tensor(labels, dtype=torch.long)
         self.difficulty = torch.tensor(difficulties, dtype=torch.float32).clamp(0.0, 1.0)
+        _save_snapshot(
+            snapshot_path,
+            {
+                "tokens": self.tokens,
+                "labels": self.labels,
+                "difficulty": self.difficulty,
+            },
+        )
 
     def __len__(self) -> int:
         return self.tokens.size(0)
@@ -278,6 +330,25 @@ class LongBenchDataset(Dataset[dict[str, Tensor]]):
 
     def __init__(self, split: str, config: LongBenchConfig) -> None:
         super().__init__()
+        snapshot_path = _dataset_snapshot_dir() / (
+            f"longbench_{_snapshot_key([
+                config.benchmark_name,
+                split,
+                str(config.seq_len),
+                str(config.vocab_size),
+                str(config.train_size),
+                str(config.val_size),
+                str(config.split_seed),
+                str(config.lowercase),
+                str(config.use_e_variant),
+            ])}.pt"
+        )
+        snapshot = _load_snapshot(snapshot_path)
+        if snapshot is not None:
+            self.tokens = snapshot["tokens"]
+            self.labels = snapshot["labels"]
+            self.difficulty = snapshot["difficulty"]
+            return
         train_rows, val_rows = build_longbench_splits(config)
         rows = train_rows if split == "train" else val_rows
         label_space = train_rows[0]["all_classes"] or []
@@ -314,6 +385,14 @@ class LongBenchDataset(Dataset[dict[str, Tensor]]):
         self.tokens = torch.stack(tokens, dim=0)
         self.labels = torch.tensor(labels, dtype=torch.long)
         self.difficulty = torch.tensor(difficulties, dtype=torch.float32).clamp(0.0, 1.0)
+        _save_snapshot(
+            snapshot_path,
+            {
+                "tokens": self.tokens,
+                "labels": self.labels,
+                "difficulty": self.difficulty,
+            },
+        )
 
     def __len__(self) -> int:
         return self.tokens.size(0)

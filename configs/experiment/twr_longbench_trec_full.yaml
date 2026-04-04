@@ -1,0 +1,5 @@
+model: twr_text_small.yaml
+data: longbench_trec.yaml
+train: benchmark_full.yaml
+run:
+  name: twr_longbench_trec_full

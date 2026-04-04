@@ -1,0 +1,41 @@
+{
+  "data": {
+    "batch_size": 32,
+    "filler_span": 24,
+    "kind": "ruler_needle",
+    "num_classes": 16,
+    "num_keys": 32,
+    "num_pairs": 24,
+    "seq_len": 512,
+    "train_size": 2048,
+    "val_size": 512,
+    "vocab_size": 256
+  },
+  "model": {
+    "dropout": 0.1,
+    "embed_dim": 80,
+    "freeze_encoder": false,
+    "local_context_kernel": 7,
+    "mlp_hidden_dim": 256,
+    "name": "twr",
+    "slot_dim": 128,
+    "stride": 2,
+    "think_steps": 4,
+    "window_size": 8
+  },
+  "run": {
+    "name": "twr_backbone_ruler_needle_full"
+  },
+  "train": {
+    "balance_penalty_weight": 0.0003,
+    "depth_penalty_weight": 0.0,
+    "epochs": 15,
+    "grad_clip_norm": 1.0,
+    "lr": 0.0003,
+    "seed": 7,
+    "slot_penalty_weight": 0.0,
+    "warmup_fraction": 0.1,
+    "weight_decay": 0.01,
+    "write_penalty_weight": 0.001
+  }
+}

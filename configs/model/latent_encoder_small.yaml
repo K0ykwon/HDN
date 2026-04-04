@@ -1,0 +1,5 @@
+embed_dim: 128
+slot_dim: 128
+window_size: 8
+stride: 4
+dropout: 0.1

@@ -45,13 +45,14 @@ class TransformerEncoderBaseline(nn.Module):
         pooled = encoded.mean(dim=1)
         logits = self.classifier(pooled)
         ones = torch.ones(batch_size, 1, device=tokens.device)
+        fixed_histogram = torch.ones(1, device=tokens.device)
         return {
             "logits": logits,
             "effective_depth": ones.squeeze(-1),
             "step_gates": ones,
             "slot_gates": ones.unsqueeze(1),
             "avg_active_slots": ones.mean().unsqueeze(0),
-            "slot_histogram": ones.squeeze(-1),
+            "slot_histogram": fixed_histogram,
             "avg_active_think_slots": ones.squeeze(-1),
-            "think_slot_histogram": ones.squeeze(-1),
+            "think_slot_histogram": fixed_histogram,
         }

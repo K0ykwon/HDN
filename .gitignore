@@ -1,11 +1,24 @@
 __pycache__/
 *.pyc
 .pytest_cache/
+.venv/
 
 logs/*
 results/*
 !logs/.gitkeep
 !results/.gitkeep
 
-experiments/*
-!experiments/.gitkeep
+experiments/runs/*
+!experiments/runs/.gitkeep
+!experiments/runs/*/
+experiments/runs/*/checkpoint.pt
+experiments/runs/*/training_curves.png
+
+experiments/cache/
+
+experiments/analysis/*
+!experiments/analysis/.gitkeep
+!experiments/analysis/*.json
+!experiments/analysis/*.csv
+!experiments/analysis/*.md
+!experiments/analysis/*.png

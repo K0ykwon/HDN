@@ -1,0 +1,21 @@
+{
+  "approx_flops_per_example": 16777216,
+  "avg_active_slots": 1.0,
+  "avg_active_think_slots": 1.0,
+  "avg_effective_depth": 1.0,
+  "avg_slot_gate": 1.0,
+  "avg_step_gate": 1.0,
+  "dataset_name": "pietrolesci/hyperpartisan_news_detection",
+  "depth_difficulty_corr": 0.0,
+  "epoch": 2,
+  "final_train_loss": 0.5519478662808737,
+  "final_val_accuracy": 0.5125,
+  "final_val_f1": 0.6451719549298286,
+  "final_val_loss": 0.7064927172660828,
+  "model_name": "transformer",
+  "parameter_count": 624130,
+  "peak_gpu_memory_mb": 62.4619140625,
+  "run_name": "transformer_hyperpartisan_full",
+  "seed": 7,
+  "throughput": 16179.126237750841
+}

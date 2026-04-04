@@ -1,0 +1,21 @@
+{
+  "approx_flops_per_example": 0,
+  "avg_active_slots": 512.0,
+  "avg_active_think_slots": 512.0,
+  "avg_effective_depth": 4.0,
+  "avg_slot_gate": 1.0,
+  "avg_step_gate": 1.0,
+  "dataset_name": "pietrolesci/hyperpartisan_news_detection",
+  "depth_difficulty_corr": 0.0,
+  "epoch": 15,
+  "final_train_loss": 0.029768665094549458,
+  "final_val_accuracy": 0.515,
+  "final_val_f1": 0.5792540907859802,
+  "final_val_loss": 3.56088082075119,
+  "model_name": "mamba_placeholder",
+  "parameter_count": 1266050,
+  "peak_gpu_memory_mb": 76.31005859375,
+  "run_name": "mamba_hyperpartisan_full",
+  "seed": 7,
+  "throughput": 13140.687350703949
+}

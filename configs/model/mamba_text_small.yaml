@@ -1,0 +1,5 @@
+name: mamba_placeholder
+embed_dim: 96
+state_dim: 96
+num_layers: 3
+dropout: 0.1

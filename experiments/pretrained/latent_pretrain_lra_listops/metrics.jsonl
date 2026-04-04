@@ -1,0 +1,6 @@
+{"epoch": 1, "train": {"loss": 2.061728679575026, "token_accuracy": 0.599440840393072}, "val": {"loss": 1.051929883658886, "token_accuracy": 0.6990482769906521}}
+{"epoch": 2, "train": {"loss": 0.8515135189518332, "token_accuracy": 0.7917170887812972}, "val": {"loss": 0.5997383296489716, "token_accuracy": 0.892275907099247}}
+{"epoch": 3, "train": {"loss": 0.5266551626846194, "token_accuracy": 0.9236237583681941}, "val": {"loss": 0.35536198504269123, "token_accuracy": 0.966134250164032}}
+{"epoch": 4, "train": {"loss": 0.3261646400205791, "token_accuracy": 0.9700424522161484}, "val": {"loss": 0.20872112270444632, "token_accuracy": 0.9874364919960499}}
+{"epoch": 5, "train": {"loss": 0.2004128093831241, "token_accuracy": 0.9874074384570122}, "val": {"loss": 0.12581553542986512, "token_accuracy": 0.9950087368488312}}
+{"epoch": 6, "train": {"loss": 0.1312685894081369, "token_accuracy": 0.9935167692601681}, "val": {"loss": 0.08194910315796733, "token_accuracy": 0.9971323758363724}}

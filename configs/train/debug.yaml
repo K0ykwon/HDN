@@ -6,3 +6,5 @@ warmup_fraction: 0.05
 grad_clip_norm: 1.0
 depth_penalty_weight: 0.0001
 slot_penalty_weight: 0.0001
+write_penalty_weight: 0.0005
+balance_penalty_weight: 0.0002

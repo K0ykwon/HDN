@@ -1,695 +1,82 @@
-TWR-LM 전체 정리 및 실험 설계
-(대화 반영 개정본 · Codex/연구 실행용 TXT)
+TWR-LM 현재 정리 및 실험 메모
 
-0. 문서 성격
+이 문서는 현재 저장소 상태를 기준으로 다시 정리한 간단한 실행 메모다.
+예전의 write-think-read slot memory 설계 문서는 더 이상 메인라인 구현과 일치하지 않는다.
 
-이 문서는 단순 초안 정리가 아니라, 지금까지 논의한 내용을 반영해 TWR-LM의 개념, v1 아키텍처, 실험 목표, 데이터셋 선택, 비교군, 아블레이션, 일정, 논문 포지셔닝까지 하나의 실행 가능한 연구 계획으로 정리한 개정본이다.
+1. 현재 메인라인 목표
 
-핵심적으로 다음 원칙을 반영한다.
-- TWR-LM의 정체성은 latent bottleneck 자체가 아니라 tokenless persistent memory backbone에 있다.
-- v1은 구조 검증이 목적이므로 지나치게 복잡한 operation library보다 shared refine block 중심으로 시작한다.
-- 실험은 단순 성능 비교가 아니라 tokenless 구조, adaptive compute, efficiency trade-off를 동시에 보여야 한다.
-- LRA만으로는 최신 long-context 설득력이 약할 수 있으므로, RULER 또는 LongBench 계열을 최소 1축 추가하는 것이 바람직하다.
-- Hyperpartisan는 메인 벤치마크라기보다 현실 문서 분류를 보여주는 보조 실험으로 두는 편이 안전하다.
-- Mamba/SSM 비교군은 가능하면 optional이 아니라 필수 축으로 취급한다.
+- Transformer를 대체할 수 있는 tokenless latent backbone을 만든다.
+- token-wise persistent hidden state를 backbone 상태로 유지하지 않는다.
+- overlapping latent compression 이후에는 latent sequence만으로 계산한다.
+- 파라미터 효율과 재현 가능한 benchmark 비교를 우선한다.
 
+2. 현재 메인라인 구조
 
-1. 프로젝트 개요
+tokens
+-> overlapping latent encoder
+-> latent sequence
+-> shared refinement
+-> selective pairwise merge
+-> multiscale query readout
+-> logits
 
-목표
-Transformer를 그대로 따르지 않으면서도, 긴 시퀀스를 효율적으로 처리할 수 있는 새로운 시퀀스 모델 구조를 설계한다.
+핵심 파일
+- src/twr/models/twr_lm.py
+- src/twr/modules/latent_encoder.py
+- src/twr/modules/latent_backbone.py
 
-핵심 방향
-- 토큰을 끝까지 persistent state로 유지하지 않는다.
-- 입력은 작은 latent memory에 기록된다.
-- 이후 계산은 token이 아니라 memory 내부에서만 진행된다.
-- 입력 난이도에 따라 계산 깊이와 memory 사용량이 달라진다.
+3. 현재 비교 대상
 
-따라서 TWR-LM은 단순한 latent bottleneck 모델이 아니라, tokenless write-think-read backbone을 지향한다.
+- TWR lean
+- Transformer
+- Mamba
 
+4. 현재 벤치마크
 
-2. 핵심 철학
+- LRA ListOps
+- RULER needle
+- LongBench TREC
+- Hyperpartisan
 
-2.1 Latent 철학
-기존 Transformer는 각 토큰의 hidden state를 persistent state로 유지한다.
-반면 TWR-LM은 작은 latent memory만을 실제 상태로 유지한다.
+5. 최신 결과 요약
 
-즉
-- Transformer: state = token-wise distributed states
-- TWR-LM: state = small persistent latent memory
+ListOps
+- TWR lean: 0.2285, 82,587 params
+- Transformer: 0.2383, 86,026 params
+- Mamba: 0.1289, 95,530 params
 
-이 철학은 모델의 핵심 표현을 token space에서 latent memory space로 옮긴다.
+RULER needle
+- TWR lean: 0.0840, 100,065 params
+- Transformer: 0.0801, 117,136 params
+- Mamba: 0.0781, 252,048 params
 
-2.2 분화 철학
-분화는 더 이상 노드 증가나 구조 성장으로 구현되지 않는다.
-
-대신
-- 쉬운 입력은 짧게 계산하고
-- 어려운 입력은 더 오래 생각하며
-- 중요한 memory slot에 더 많은 계산을 할당한다
-
-즉
-- 구조는 고정
-- 계산은 입력 의존적
-
-이라는 원칙을 따른다.
-
-2.3 Tokenless 철학
-토큰은 persistent state가 아니라 일시적 event다.
-입력 토큰은 event encoder를 통해 memory를 갱신하는 신호가 되고, write 단계가 끝나면 원래 token representation은 더 이상 사용하지 않는다.
-
-이 점이 TWR-LM의 정체성을 가장 강하게 규정한다.
-
-
-3. 모델 이름과 한 줄 정의
-
-제안 이름
-TWR-LM: Tokenless Write-Think-Read Latent Machine
-
-한 줄 정의
-입력 토큰을 event로 변환해 작은 latent memory에 기록하고, 이후 계산은 memory만을 반복 정제하는 방식으로 수행한 뒤, 최종 memory에서 출력을 읽어오는 tokenless sequence backbone.
-
-
-4. 전체 구조
-
-Input Tokens
-↓
-Event Encoder
-↓
-Sequential Write into Latent Memory
-↓
-Token representations removed
-↓
-Think Phase on Latent Memory
-↓
-Adaptive depth / slot usage
-↓
-Readout
-↓
-Output
-
-이 구조는 크게 세 단계로 나뉜다.
-1. Write: 입력을 memory에 기록
-2. Think: memory만으로 반복 계산
-3. Read: memory에서 출력 생성
-
-핵심 전환점은 write 단계가 끝난 직후다.
-이후 모델의 계산 상태는 오직 M_write만 남으며, token representation은 제거된다.
-
-
-5. 모듈별 상세 설계
-
-5.1 Input / Event Encoder
-입력 시퀀스는 x_1, x_2, ..., x_n으로 주어진다.
-각 토큰은 embedding과 positional signal을 받아 event 벡터가 된다.
-
-e_t = φ(x_t, p_t)
-
-여기서
-- x_t: token embedding
-- p_t: positional encoding
-- φ: 작은 MLP 또는 projection block
-
-중요한 점은 e_t가 token state가 아니라 memory write event라는 것이다.
-
-5.2 Latent Memory
-초기 memory bank는 다음과 같이 둔다.
-
-M_0 ∈ R^{m × h}
-
-여기서
-- m: memory slot 수
-- h: slot dimension
-
-이 memory는 모델의 진짜 persistent state다.
-토큰 전체를 유지하지 않고, 작은 수의 slot만 유지한다.
-
-5.3 Sequential Write
-각 event는 순차적으로 memory를 갱신한다.
-
-M_t = Write(M_{t-1}, e_t)
-
-v1에서는 soft write를 사용한다.
-
-예시
-a_t = softmax(W_a e_t · M_{t-1}^T)
-ΔM_t = a_t ⊙ W_v e_t
-M_t = M_{t-1} + ΔM_t
-
-이 단계가 끝나면 입력 정보는 memory bank에 압축 저장된다.
-
-5.4 Tokenless 전환
-모든 token event를 write한 뒤에는 원래 token representation을 더 이상 사용하지 않는다.
-즉 이후 계산 상태는 다음뿐이다.
-
-M_write
-
-이 지점부터 모델은 진짜 tokenless가 된다.
-
-5.5 Think Phase
-입력을 모두 본 뒤, 모델은 memory만 가지고 내부 계산을 반복한다.
-
-초기 상태
-M^(0) = M_write
-
-반복 업데이트
-M^(k+1) = M^(k) + G^(k) ⊙ Refine(M^(k))
-
-여기서
-- Refine: shared latent processor
-- G^(k): step/slot gate
-
-이 Think phase가 TWR-LM의 핵심 계산 단계다.
-
-5.6 Refine Block
-v1에서는 복잡한 operation library 대신, 하나의 shared refine block으로 시작한다.
-
-구성 추천
-- LayerNorm
-- slot mixer
-- gated MLP
-- residual connection
-
-예시
-Ṁ = MLP(Mix(LN(M)))
-M' = M + G ⊙ Ṁ
-
-Slot mixer 후보
-- low-rank slot mixing
-- 1D convolution over slots
-
-v1에서는 low-rank slot mixer + GLU MLP가 가장 현실적이다.
-
-
-6. 분화 구현
-
-분화는 구조 성장이 아니라 계산 경로의 입력 의존적 변화로 구현된다.
-
-6.1 Depth 분화
-입력마다 effective think depth가 달라진다.
-
-α_k = σ(w^T Pool(M^(k)))
-M^(k+1) = M^(k) + α_k · Refine(M^(k))
-
-해석
-- 쉬운 입력: α_k 작음 → 적은 계산
-- 어려운 입력: α_k 큼 → 깊은 계산
-
-6.2 Width 분화
-각 memory slot마다 업데이트 강도를 다르게 둔다.
-
-S^(k) = σ(W_s M^(k))
-M^(k+1) = M^(k) + S^(k) ⊙ Refine(M^(k))
-
-즉 어떤 slot은 강하게 갱신되고, 어떤 slot은 거의 유지된다.
-
-6.3 연산 분화
-최종형에서는 operation library를 둘 수 있지만, v1에서는 약한 형태만 유지한다.
-
-옵션
-- refine path
-- compare/mix path
-
-M^(k+1) = M^(k) + g_r^(k) O_r(M^(k)) + g_c^(k) O_c(M^(k))
-
-다만 v1 논문 프로토타입에서는 single refine block만으로도 충분하다.
-
-
-7. Readout
-
-최종 memory에서 출력 생성
-y = Read(q, M^(T))
-
-v1에서는 pooled readout으로 시작한다.
-
-분류 기준
-z = Pool(M^(T))
-y = W_o z
-
-
-8. 장기 의존성 해석
-
-이 구조는 장기 의존성을 자동으로 해결하지 않는다.
-대신 장기 의존성을 다루는 방식이 Transformer와 다르다.
-
-- Transformer: 과거 토큰을 직접 저장하고 참조
-- TWR-LM: 과거 정보를 memory에 압축 저장하고, think phase에서 관계를 재구성
-
-즉
-- Transformer = direct token-level access
-- TWR-LM = compressed memory + iterative reconstruction
-
-따라서 성공 조건은 다음과 같다.
-1. strong write
-2. 충분한 slot 수
-3. slot mixing
-4. 충분한 think depth
-
-
-9. v1 모델 스펙
-
-추천 스펙 A (가장 현실적)
-- token embedding dim: 128
-- event encoder: 1-layer MLP
-- memory slots: 16
-- slot dim: 128
-- write: sequential soft write
-- think max steps: 4
-- refine block: low-rank slot mixer + GLU MLP
-- step gate: scalar sigmoid
-- slot gate: slot-wise sigmoid
-- readout: mean pool + linear classifier
-
-추천 스펙 B (확장형)
-- embedding dim: 192 또는 256
-- memory slots: 32
-- slot dim: 128 또는 192
-- think max steps: 6
-
-판단
-처음 프로토타입은 스펙 A로 시작하는 것이 좋다.
-구조 아이디어 검증과 디버깅 비용 통제 사이 균형이 가장 좋다.
-
-
-10. 학습 방법
-
-총 손실
-L = L_task + λ_d L_depth + λ_s L_slot
-
-10.1 Task loss
-분류에서는 cross-entropy를 사용한다.
-
-10.2 Depth budget loss
-너무 많은 think step을 쓰지 않게 한다.
-L_depth = (1 / T_max) Σ_k α_k
-
-10.3 Slot sparsity loss
-너무 많은 slot을 동시에 크게 쓰지 않게 한다.
-L_slot = (1 / (m T_max)) Σ_{k,i} S_i^(k)
-
-핵심
-목표는 최고 성능 하나가 아니라, 적은 계산 예산으로도 의미 있는 성능을 내는 구조를 학습시키는 것이다.
-
-
-11. 실험 질문
-
-실험은 다음 세 가지 질문에 답해야 한다.
-
-11.1 Tokenless 구조가 실제로 작동하는가
-토큰 state 없이도 경쟁력 있는 성능이 나오는가.
-
-11.2 분화가 실제로 일어나는가
-입력 난이도가 올라갈수록 effective depth와 slot 사용량이 증가하는가.
-
-11.3 효율성이 있는가
-같은 파라미터 수 또는 같은 FLOPs 기준에서 baseline과 의미 있는 trade-off가 있는가.
-
-
-12. 데이터셋 및 실험 환경
-
-12.1 메인 벤치마크 축 A: Controlled long-sequence
-Long Range Arena (LRA)
-
-추천 서브태스크
-- ListOps
-- Text
-- Retrieval
-
-선정 이유
-- ListOps: 구조적 조작과 계층적 계산 성질 확인
-- Text: 긴 텍스트 분류에서 compressed memory backbone 검증
-- Retrieval: 멀리 떨어진 정보 회수 능력 점검
-
-주의
-LRA는 여전히 구조 검증용으로 유용하지만, 이것만으로 최신 long-context 모델의 설득력을 충분히 확보했다고 보기는 어렵다.
-
-12.2 메인 벤치마크 축 B: 최신성 보강용 long-context
-다음 중 최소 1개 추가
-- RULER
-- LongBench 계열
-
-선정 이유
-- LRA만 잘하는 구조라는 인상을 피한다.
-- 보다 현대적인 장문 이해 또는 긴 컨텍스트 평가 축을 확보한다.
-- TWR-LM이 “compressed memory + iterative reconstruction” 구조로 어디서 강하고 약한지 더 분명하게 드러난다.
-
-12.3 현실 문서 분류 축
-Hyperpartisan News Detection
-
-선정 이유
-- 긴 문서 분류 실험용으로 적합
-- 실제 텍스트 문서에서 tokenless memory backbone의 적용 가능성을 보조적으로 보여주기 좋음
-
-위치
-- 메인 대표 벤치마크보다는 보조 현실 데이터셋으로 두는 편이 안전하다.
-
-12.4 보조 생성 실험
-- text8
-- enwik8
-
-위치
-- appendix 수준으로 제한
-- 구조 논문의 메인 클레임은 classification / long-context understanding 중심으로 유지
-
-
-13. 입력 길이와 전처리
-
-LRA
-- 512 / 1024 / 2048 / 4096 길이 sweep
-- benchmark 기본 설정을 최대한 준수
+LongBench TREC
+- TWR lean: 0.1800, 494,083 params
+- Transformer: 0.1800, 627,250 params
+- Mamba: 0.1800, 1,272,242 params
 
 Hyperpartisan
-- full article 기준
-- 최대 2048 또는 4096 subword
+- TWR lean: 0.5400, 475,283 params
+- Transformer: 0.5450, 624,130 params
+- Mamba: 0.5150, 1,266,050 params
 
-text8 / enwik8
-- character-level
-- context length 512 / 1024 / 2048
+6. 현재 해석
 
-최신 장문 벤치마크 축
-- 사용 데이터셋의 공식 평가 프로토콜을 따름
-- v1에서는 무리한 length 확장보다 재현 가능한 범위에서 시작
+- Transformer가 아직 전체적으로 가장 안정적이다.
+- TWR lean은 ListOps, Hyperpartisan에서 Transformer에 거의 붙었다.
+- TWR lean은 RULER에서 근소 우세를 유지한다.
+- TWR lean은 LongBench TREC에서 Transformer와 동률이다.
+- 이번 설정에서는 Mamba가 네 벤치 모두에서 우세하지 않다.
 
+7. 현재 우선순위
 
-14. Baseline
+- 긴 문맥 태스크에서 lean TWR의 성능 저하를 줄일 것
+- 파라미터를 크게 늘리지 않고 long-context headroom을 회복할 것
+- text-lean과 long-lean 설정을 더 분리해서 최적화할 것
 
-반드시 포함해야 하는 비교군
+8. 참고 위치
 
-14.1 Transformer Encoder
-- token-wise persistent state의 기준선
-- 같은 파라미터 수, 가능한 한 비슷한 FLOPs 기준으로 비교
-
-14.2 Perceiver-style latent baseline
-- latent bottleneck 자체와의 비교
-- “tokenless persistent memory”의 차별성을 보여주기 위한 핵심 baseline
-
-14.3 Mamba / SSM baseline
-- attention-free sequence model과의 비교
-- 가능하면 optional이 아니라 사실상 필수 비교군으로 취급
-
-14.4 내부 ablation baseline
-- no think
-- fixed think depth
-- adaptive think depth
-- no slot gate
-- token residual access variant
-
-핵심 메시지
-비교는 “누가 최고 점수를 냈는가”만이 아니라,
-- token state 유지 vs tokenless memory
-- latent bottleneck vs write-think-read backbone
-- attention-based vs attention-free efficiency
-를 각각 분리해서 보여주는 방향으로 설계해야 한다.
-
-
-15. 하이퍼파라미터
-
-공통 학습 설정
-- optimizer: AdamW
-- learning rate: 3e-4
-- weight decay: 0.01
-- warmup: 5%
-- dropout: 0.1
-- gradient clipping: 1.0
-
-batch size
-- 24GB GPU 1장: 16~32
-- 48GB GPU 1장: 32~64
-- 80GB급: 64~128
-
-regularization
-- depth penalty: 1e-4 ~ 5e-4
-- slot penalty: 1e-4 ~ 5e-4
-
-epoch / budget
-- LRA: 50~100 epoch
-- Hyperpartisan: 5~10 epoch
-- text8/enwik8: 100k~300k update budget
-
-운용 원칙
-- v1은 작은 모델과 안정적인 학습을 우선
-- 큰 모델 확장은 구조가 작동한다는 증거를 확보한 뒤 진행
-
-
-16. 하드웨어 스펙
-
-최소
-- RTX 4090 24GB 1장
-- RAM 64GB
-- SSD 1TB
-
-권장
-- 4090 2장 또는 A100 40GB 1장
-- RAM 128GB
-- SSD 2TB
-
-넉넉
-- A100 80GB 1~2장
-- RAM 128GB+
-
-
-17. 아블레이션 계획
-
-17.1 구조 ablation
-- full tokenless
-- token residual access
-- no think
-- fixed depth
-- adaptive depth
-- no slot gate
-- slot gate
-
-17.2 용량 ablation
-- slots: 8 / 16 / 32
-- slot dim: 64 / 128 / 192
-- max think steps: 2 / 4 / 6
-
-17.3 write ablation
-- soft write
-- residual write 강화
-- pooled one-shot write
-
-의도
-이 아블레이션은 단순 성능 차이보다,
-- write가 중요한지
-- think가 중요한지
-- adaptive depth가 의미 있는지
-- slot gating이 분화를 실제로 만드는지
-를 검증하는 데 목적이 있다.
-
-
-18. 평가 지표
-
-정확도만 보면 안 된다.
-구조 논문이므로 계산 사용 패턴을 함께 보여야 한다.
-
-필수 지표
-- accuracy / F1 / loss
-- parameter count
-- estimated FLOPs
-- throughput
-- GPU memory peak
-
-구조 해석 지표
-- average effective depth
-- sample-wise depth distribution
-- average active slots
-- slot usage heatmap
-- difficulty vs depth correlation
-
-핵심 해석 포인트
-- 쉬운 입력일수록 얕은 think depth를 쓰는가
-- 어려운 입력일수록 더 많은 slot 또는 더 깊은 think를 사용하는가
-- adaptive compute가 단순 노이즈가 아니라 입력 난이도와 상관되는가
-
-
-19. 예상 강점
-
-구조가 잘 작동하면 다음을 기대할 수 있다.
-- 쉬운 입력은 적은 계산만 사용
-- 어려운 입력은 더 깊은 think phase 사용
-- tokenless 구조임에도 일부 long-range task에서 강한 성능
-- 같은 파라미터 수 기준에서 효율적 trade-off 확보
-- compute allocation pattern이 해석 가능하게 드러남
-
-
-20. 예상 실패 지점 및 대응
-
-20.1 Write collapse
-문제
-중요 정보가 memory에 충분히 기록되지 않음
-
-대응
-- residual write 강화
-- stronger event encoder
-- slot 수 증가
-
-20.2 Depth collapse
-문제
-모든 입력에서 비슷한 depth만 사용
-
-대응
-- budget penalty 조정
-- difficulty bucket 분석
-
-20.3 Slot collapse
-문제
-일부 slot만 계속 사용되거나, 모든 slot이 비슷하게 동작
-
-대응
-- slot usage logging
-- sparsity / balancing penalty 소량 추가
-
-20.4 Tokenless penalty
-문제
-실제 텍스트에서 성능이 크게 감소
-
-대응
-- 1차 논문은 synthetic + classification 중심
-- LM은 appendix 수준으로 제한
-- token residual access ablation으로 손실 위치 진단
-
-
-21. 개발 및 실험 순서
-
-1단계
-- tokenless write + pooled readout
-- think phase 없음
-- synthetic 또는 LRA 1개 태스크로 학습 확인
-
-2단계
-- fixed think phase 추가
-
-3단계
-- soft step gate 추가
-
-4단계
-- soft slot gate 추가
-
-5단계
-- long classification 연결
-- baseline 비교
-- ablation 실행
-
-운용 원칙
-처음부터 모든 기능을 넣지 말고,
-write → fixed think → adaptive think → slot gate 순으로 올라간다.
-
-
-22. 일정 계획
-
-22.1 빠듯한 일정
-약 2주
-
-- 1~5일: 구현 완료
-- 6~9일: 핵심 실험
-- 10~12일: ablation
-- 13~14일: 표 / 그림 / 정리
-
-해석
-2주는 내부 검증과 핵심 구조 확인에는 가능하지만, 강한 제출형 패키지까지 가기에는 다소 빠듯하다.
-
-22.2 안정적 일정
-약 3주
-
-- 구현 및 디버깅 1주
-- 핵심 실험 및 ablation 1주
-- 정리 및 baseline 보강 1주
-
-해석
-3주 안은 더 현실적이다.
-특히 Mamba 비교와 최신 long-context 축 추가, 결과 정리까지 포함하려면 이쪽이 낫다.
-
-
-23. 논문 포지셔닝
-
-안전한 주장
-"To our knowledge, we propose a tokenless write-think-read sequence backbone that replaces persistent token-wise states with a small latent memory and allocates computation adaptively inside the bottleneck."
-
-차별화 포인트
-- latent bottleneck 자체만이 아니라 tokenless persistent memory backbone
-- adaptive compute 자체만이 아니라 memory 내부 분화
-- attention-free recurrence 자체만이 아니라 write-think-read separation
-
-권장 클레임 톤
-- “Transformer를 대체한다”보다는
-- “일부 long-sequence 설정에서 경쟁력 있는 성능-계산 trade-off와 해석 가능한 adaptive compute pattern을 보인다”
-가 더 안전하고 설득력 있다.
-
-
-24. 최종 요약
-
-최종 구조
-TWR-LM: Tokenless Write-Think-Read Latent Machine
-
-핵심 아이디어
-- 토큰은 event다.
-- state는 작은 latent memory다.
-- 계산은 memory 내부에서만 진행된다.
-- 입력 난이도에 따라 계산 깊이와 slot 사용량이 달라진다.
-
-v1 실험 목표
-- tokenless 구조가 실제로 가능한가
-- adaptive think가 의미 있는가
-- 작은 persistent memory가 긴 의존성을 어느 정도 다룰 수 있는가
-
-v1 추천 설정
-- embedding 128
-- memory slots 16
-- slot dim 128
-- think steps 4
-- sequential soft write
-- shared refine block
-- soft step gate
-- soft slot gate
-
-메인 벤치마크 구성
-- 축 A: LRA (ListOps / Text / Retrieval)
-- 축 B: RULER 또는 LongBench 계열 최소 1개
-- 보조: Hyperpartisan
-- appendix: text8 또는 enwik8
-
-baseline
-- Transformer
-- Perceiver-style latent encoder
-- Mamba / SSM
-- 내부 ablation baseline
-
-기간
-- 최소 2주
-- 권장 3주
-
-
-25. 다음 단계
-
-1. PyTorch 아키텍처 코드 뼈대 작성
-2. 실험 config 파일 설계
-3. baseline 통일 인터페이스 구축
-4. LRA 우선 연결
-5. RULER 또는 LongBench 축 1개 추가
-6. ablation 자동화 스크립트 작성
-7. 로그 / 표 / 그림 산출 규칙 고정
-
-
-26. 신선도 및 현실성 평가
-
-26.1 신선도 평가
-- tokenless persistent memory backbone이라는 framing은 충분히 새롭다.
-- latent bottleneck, adaptive compute, memory refinement를 하나의 backbone 철학으로 묶은 점이 강하다.
-- write-think-read separation이 구조적 정체성을 분명하게 만든다.
-
-26.2 현실성 평가
-- v1 스펙 A는 구현과 디버깅 측면에서 현실적이다.
-- 초기 논문은 synthetic + classification 중심으로 가는 것이 안전하다.
-- 실제 텍스트 태스크에서는 write quality와 memory capacity가 병목이 될 수 있다.
-- 따라서 strong write, slot 수, think depth, slot mixing을 핵심 조절축으로 삼는 것이 적절하다.
-
-26.3 실험 설계 평가
-- LRA는 여전히 출발점으로 유효하다.
-- 그러나 LRA만으로 메인 실험을 닫으면 최신 long-context 설득력이 약해질 수 있다.
-- 최신 장문 평가 축을 최소 1개 보강하는 것이 좋다.
-- Mamba / SSM 비교군은 가능하면 필수로 넣는 편이 낫다.
-
-26.4 최종 판단
-TWR-LM은 아이디어의 신선도가 높고, v1 프로토타입도 충분히 현실적이다.
-다만 실험 설계는 “LRA 중심 구조 검증”에서 끝나지 말고, 최신 장문 평가 축과 강한 비교군을 포함하는 방향으로 확장해야 논문 설득력이 올라간다.
+- README.md
+- experiments/analysis/summary_report.md
+- configs/experiment/
+- experiments/runs/

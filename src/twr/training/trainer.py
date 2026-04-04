@@ -142,9 +142,13 @@ def run_epoch(
             labels=batch["labels"],
             effective_depth=outputs["effective_depth"],
             slot_gates=outputs["slot_gates"],
+            avg_active_slots=outputs["avg_active_slots"],
+            slot_histogram=outputs["slot_histogram"],
             think_steps=think_steps,
             depth_penalty_weight=float(train_config.get("depth_penalty_weight", 0.0)),
             slot_penalty_weight=float(train_config.get("slot_penalty_weight", 0.0)),
+            write_penalty_weight=float(train_config.get("write_penalty_weight", 0.0)),
+            balance_penalty_weight=float(train_config.get("balance_penalty_weight", 0.0)),
         )
 
         if is_train:
@@ -233,8 +237,10 @@ def train(config: dict[str, Any]) -> TrainingArtifacts:
     )
 
     best_val_loss = float("inf")
+    best_val_accuracy = float("-inf")
     best_summary: dict[str, Any] = {}
     best_analysis: dict[str, Any] = {}
+    best_loss_summary: dict[str, Any] = {}
 
     for epoch in range(1, int(train_config["epochs"]) + 1):
         train_metrics, _ = run_epoch(
@@ -264,14 +270,21 @@ def train(config: dict[str, Any]) -> TrainingArtifacts:
         }
         logger.log(record)
 
-        if val_metrics["loss"] < best_val_loss:
-            best_val_loss = val_metrics["loss"]
+        if (
+            val_metrics["accuracy"] > best_val_accuracy
+            or (
+                val_metrics["accuracy"] == best_val_accuracy
+                and val_metrics["loss"] < best_summary.get("final_val_loss", float("inf"))
+            )
+        ):
+            best_val_accuracy = val_metrics["accuracy"]
             torch.save(model.state_dict(), run_dir / "checkpoint.pt")
             best_summary = {
                 "run_name": run_name,
                 "model_name": model_config["name"],
                 "dataset_name": dataset_name,
                 "seed": seed,
+                "epoch": epoch,
                 "final_train_loss": train_metrics["loss"],
                 "final_val_loss": val_metrics["loss"],
                 "final_val_accuracy": val_metrics["accuracy"],
@@ -297,6 +310,31 @@ def train(config: dict[str, Any]) -> TrainingArtifacts:
                 "avg_slot_gate": val_metrics["avg_slot_gate"],
                 "depth_difficulty_corr": val_metrics["depth_difficulty_corr"],
             }
+            write_json(run_dir / "best_accuracy_summary.json", best_summary)
+
+        if val_metrics["loss"] < best_val_loss:
+            best_val_loss = val_metrics["loss"]
+            best_loss_summary = {
+                "run_name": run_name,
+                "model_name": model_config["name"],
+                "dataset_name": dataset_name,
+                "seed": seed,
+                "epoch": epoch,
+                "final_train_loss": train_metrics["loss"],
+                "final_val_loss": val_metrics["loss"],
+                "final_val_accuracy": val_metrics["accuracy"],
+                "final_val_f1": val_metrics["f1"],
+                "parameter_count": parameter_count,
+                "approx_flops_per_example": approx_flops,
+                "avg_effective_depth": val_metrics["effective_depth"],
+                "avg_active_slots": val_metrics["avg_active_slots"],
+                "avg_active_think_slots": val_metrics["avg_active_think_slots"],
+                "avg_step_gate": val_metrics["avg_step_gate"],
+                "avg_slot_gate": val_metrics["avg_slot_gate"],
+                "throughput": val_metrics["throughput"],
+                "peak_gpu_memory_mb": val_metrics["peak_gpu_memory_mb"],
+                "depth_difficulty_corr": val_metrics["depth_difficulty_corr"],
+            }
 
         print(
             f"epoch={epoch} "
@@ -310,4 +348,6 @@ def train(config: dict[str, Any]) -> TrainingArtifacts:
 
     write_json(run_dir / "summary.json", best_summary)
     write_json(run_dir / "analysis.json", best_analysis)
+    if best_loss_summary:
+        write_json(run_dir / "best_loss_summary.json", best_loss_summary)
     return TrainingArtifacts(run_dir=run_dir, summary=best_summary)

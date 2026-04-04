@@ -1,0 +1,5 @@
+model: twr_backbone_text_full.yaml
+data: lra_listops.yaml
+train: benchmark_full.yaml
+run:
+  name: twr_backbone_lra_listops_full

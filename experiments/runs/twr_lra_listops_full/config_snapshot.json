@@ -1,0 +1,54 @@
+{
+  "data": {
+    "batch_size": 32,
+    "kind": "lra_listops",
+    "max_args": 4,
+    "max_depth": 5,
+    "num_classes": 10,
+    "seq_len": 256,
+    "train_size": 2048,
+    "val_size": 512,
+    "vocab_size": 32
+  },
+  "model": {
+    "adaptive_depth": true,
+    "attention_heads": 4,
+    "dropout": 0.1,
+    "embed_dim": 48,
+    "event_dim": 48,
+    "local_context_kernel": 3,
+    "mixer_rank": 2,
+    "mlp_hidden_dim": 96,
+    "name": "twr",
+    "slot_dim": 48,
+    "slot_gate_bias": -3.1,
+    "slot_gate_scale": 4.5,
+    "slots": 8,
+    "step_gate_bias": -2.8,
+    "step_gate_scale": 3.2,
+    "think_steps": 4,
+    "use_slot_gate": true,
+    "use_token_residual": false,
+    "write_novelty_scale": 0.45,
+    "write_temperature": 0.85,
+    "write_topk": 4,
+    "write_usage_decay": 0.92,
+    "write_usage_penalty": 0.2,
+    "write_variant": "soft_write"
+  },
+  "run": {
+    "name": "twr_lra_listops_full"
+  },
+  "train": {
+    "balance_penalty_weight": 0.0003,
+    "depth_penalty_weight": 0.0,
+    "epochs": 15,
+    "grad_clip_norm": 1.0,
+    "lr": 0.0003,
+    "seed": 7,
+    "slot_penalty_weight": 0.0,
+    "warmup_fraction": 0.1,
+    "weight_decay": 0.01,
+    "write_penalty_weight": 0.001
+  }
+}

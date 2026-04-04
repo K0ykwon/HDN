@@ -1,0 +1,38 @@
+{
+  "data": {
+    "batch_size": 8,
+    "benchmark_name": "trec",
+    "kind": "longbench",
+    "lowercase": true,
+    "num_classes": 50,
+    "seq_len": 512,
+    "split_seed": 7,
+    "train_size": 150,
+    "use_e_variant": false,
+    "val_size": 50,
+    "vocab_size": 8192
+  },
+  "model": {
+    "dropout": 0.1,
+    "embed_dim": 64,
+    "mlp_hidden_dim": 128,
+    "name": "transformer",
+    "num_heads": 4,
+    "num_layers": 2
+  },
+  "run": {
+    "name": "transformer_longbench_trec_full"
+  },
+  "train": {
+    "balance_penalty_weight": 0.0003,
+    "depth_penalty_weight": 0.0,
+    "epochs": 15,
+    "grad_clip_norm": 1.0,
+    "lr": 0.0003,
+    "seed": 7,
+    "slot_penalty_weight": 0.0,
+    "warmup_fraction": 0.1,
+    "weight_decay": 0.01,
+    "write_penalty_weight": 0.001
+  }
+}

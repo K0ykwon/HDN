@@ -1,19 +1,3 @@
-# Prompt 04 — Add Baselines
+# Archived Prompt
 
-Add baseline models under the same training interface.
-
-## Must include
-- Transformer encoder baseline
-- Perceiver-style latent baseline
-
-## Nice to include
-- Mamba/SSM interface placeholder or wrapper if feasible
-
-## Requirements
-- Shared dataset pipeline
-- Shared trainer and evaluation path
-- Comparable config style
-- Parameter counts reported consistently
-
-## Deliverable
-Baseline modules, configs, and example run commands.
+This file belongs to the original bootstrap prompt set and may not match the current baseline lineup or config names.
