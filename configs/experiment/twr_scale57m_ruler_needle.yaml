@@ -1,0 +1,5 @@
+model: twr_backbone_scale_57m.yaml
+data: ruler_needle.yaml
+train: benchmark.yaml
+run:
+  name: twr_scale57m_ruler_needle

@@ -1,0 +1,5 @@
+model: twr_backbone_long_2latent.yaml
+data: longbench_trec.yaml
+train: benchmark.yaml
+run:
+  name: twr_backbone_longbench_trec_2latent

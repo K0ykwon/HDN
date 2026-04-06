@@ -17,7 +17,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--experiment",
         required=True,
-        help="Path to an experiment YAML, for example configs/experiment/twr_debug.yaml",
+        help="Path to an experiment YAML, for example configs/experiment/twr_backbone_lra_listops.yaml",
     )
     return parser.parse_args()
 

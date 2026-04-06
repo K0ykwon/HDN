@@ -1,5 +1,0 @@
-model: mamba_long_small.yaml
-data: hyperpartisan.yaml
-train: benchmark_full.yaml
-run:
-  name: mamba_hyperpartisan_full

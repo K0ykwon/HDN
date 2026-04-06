@@ -1,0 +1,12 @@
+kind: longbench
+benchmark_name: lsht
+seq_len: 512
+vocab_size: 8192
+num_classes: 24
+train_size: 150
+val_size: 50
+batch_size: 8
+split_seed: 7
+lowercase: false
+use_e_variant: false
+local_files_only: true

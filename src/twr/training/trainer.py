@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 from pathlib import Path
 from typing import Any
 
@@ -38,6 +39,10 @@ class TrainingArtifacts:
     summary: dict[str, Any]
 
 
+def _strip_kind(data_config: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in data_config.items() if key != "kind"}
+
+
 def build_dataloaders(data_config: dict[str, Any], seed: int) -> tuple[DataLoader, DataLoader]:
     data_kind = data_config.get("kind", "synthetic")
     if data_kind == "synthetic":
@@ -46,22 +51,22 @@ def build_dataloaders(data_config: dict[str, Any], seed: int) -> tuple[DataLoade
         val_dataset = SyntheticSequenceDataset(size=config.val_size, config=config, seed=seed + 1)
         batch_size = config.batch_size
     elif data_kind == "lra_listops":
-        config = ListOpsConfig(**{k: v for k, v in data_config.items() if k != "kind"})
+        config = ListOpsConfig(**_strip_kind(data_config))
         train_dataset = ListOpsDataset(size=config.train_size, config=config, seed=seed)
         val_dataset = ListOpsDataset(size=config.val_size, config=config, seed=seed + 1)
         batch_size = config.batch_size
     elif data_kind == "ruler_needle":
-        config = RulerNeedleConfig(**{k: v for k, v in data_config.items() if k != "kind"})
+        config = RulerNeedleConfig(**_strip_kind(data_config))
         train_dataset = RulerNeedleDataset(size=config.train_size, config=config, seed=seed)
         val_dataset = RulerNeedleDataset(size=config.val_size, config=config, seed=seed + 1)
         batch_size = config.batch_size
     elif data_kind == "hf_text":
-        config = HuggingFaceTextConfig(**{k: v for k, v in data_config.items() if k != "kind"})
+        config = HuggingFaceTextConfig(**_strip_kind(data_config))
         train_dataset = HuggingFaceTextDataset(split="train", config=config)
         val_dataset = HuggingFaceTextDataset(split="val", config=config)
         batch_size = config.batch_size
     elif data_kind == "longbench":
-        config = LongBenchConfig(**{k: v for k, v in data_config.items() if k != "kind"})
+        config = LongBenchConfig(**_strip_kind(data_config))
         train_dataset = LongBenchDataset(split="train", config=config)
         val_dataset = LongBenchDataset(split="val", config=config)
         batch_size = config.batch_size
@@ -90,14 +95,24 @@ def build_warmup_scheduler(
     optimizer: AdamW,
     total_steps: int,
     warmup_fraction: float,
+    scheduler_type: str,
+    min_lr_scale: float,
 ) -> LambdaLR:
     warmup_steps = max(int(total_steps * warmup_fraction), 1)
+    scheduler_name = scheduler_type.lower()
 
     def lr_lambda(step: int) -> float:
         current_step = step + 1
         if current_step <= warmup_steps:
             return current_step / warmup_steps
-        return 1.0
+        if scheduler_name in {"constant", "warmup"}:
+            return 1.0
+        if scheduler_name == "cosine":
+            decay_steps = max(total_steps - warmup_steps, 1)
+            progress = min(max((current_step - warmup_steps) / decay_steps, 0.0), 1.0)
+            cosine = 0.5 * (1.0 + math.cos(math.pi * progress))
+            return min_lr_scale + (1.0 - min_lr_scale) * cosine
+        raise ValueError(f"Unsupported scheduler_type: {scheduler_type}")
 
     return LambdaLR(optimizer, lr_lambda=lr_lambda)
 
@@ -111,6 +126,51 @@ def aggregate_epoch(records: list[dict[str, float]]) -> dict[str, float]:
             continue
         aggregated[key] = sum(record[key] * record["batch_size"] for record in records) / total
     return aggregated
+
+
+def build_dataset_name(data_config: dict[str, Any]) -> str:
+    if "task" in data_config:
+        return str(data_config["task"])
+    if "dataset_name" in data_config:
+        return str(data_config["dataset_name"])
+    if data_config.get("kind") == "longbench":
+        return f"longbench_{data_config.get('benchmark_name', 'dataset')}"
+    return "dataset"
+
+
+def build_summary_payload(
+    *,
+    run_name: str,
+    model_name: str,
+    dataset_name: str,
+    seed: int,
+    epoch: int,
+    train_metrics: dict[str, float],
+    val_metrics: dict[str, float],
+    parameter_count: int,
+    approx_flops: int,
+) -> dict[str, Any]:
+    return {
+        "run_name": run_name,
+        "model_name": model_name,
+        "dataset_name": dataset_name,
+        "seed": seed,
+        "epoch": epoch,
+        "final_train_loss": train_metrics["loss"],
+        "final_val_loss": val_metrics["loss"],
+        "final_val_accuracy": val_metrics["accuracy"],
+        "final_val_f1": val_metrics["f1"],
+        "parameter_count": parameter_count,
+        "approx_flops_per_example": approx_flops,
+        "avg_effective_depth": val_metrics["effective_depth"],
+        "avg_active_slots": val_metrics["avg_active_slots"],
+        "avg_active_think_slots": val_metrics["avg_active_think_slots"],
+        "avg_step_gate": val_metrics["avg_step_gate"],
+        "avg_slot_gate": val_metrics["avg_slot_gate"],
+        "throughput": val_metrics["throughput"],
+        "peak_gpu_memory_mb": val_metrics["peak_gpu_memory_mb"],
+        "depth_difficulty_corr": val_metrics["depth_difficulty_corr"],
+    }
 
 
 def run_epoch(
@@ -149,6 +209,7 @@ def run_epoch(
             slot_penalty_weight=float(train_config.get("slot_penalty_weight", 0.0)),
             write_penalty_weight=float(train_config.get("write_penalty_weight", 0.0)),
             balance_penalty_weight=float(train_config.get("balance_penalty_weight", 0.0)),
+            label_smoothing=float(train_config.get("label_smoothing", 0.0)),
         )
 
         if is_train:
@@ -220,9 +281,11 @@ def train(config: dict[str, Any]) -> TrainingArtifacts:
         optimizer=optimizer,
         total_steps=total_steps,
         warmup_fraction=float(train_config.get("warmup_fraction", 0.0)),
+        scheduler_type=str(train_config.get("scheduler_type", "constant")),
+        min_lr_scale=float(train_config.get("min_lr_scale", 0.0)),
     )
 
-    dataset_name = data_config.get("task", data_config.get("dataset_name", "dataset"))
+    dataset_name = build_dataset_name(data_config)
     run_name = run_config.get("name") or f"{model_config['name']}_{dataset_name}_seed{seed}"
     run_dir = ensure_dir(Path("experiments/runs") / run_name)
     logger = JsonlLogger(run_dir / "metrics.jsonl")
@@ -238,6 +301,8 @@ def train(config: dict[str, Any]) -> TrainingArtifacts:
 
     best_val_loss = float("inf")
     best_val_accuracy = float("-inf")
+    early_stop_patience = int(train_config.get("early_stop_patience", 0))
+    epochs_without_improvement = 0
     best_summary: dict[str, Any] = {}
     best_analysis: dict[str, Any] = {}
     best_loss_summary: dict[str, Any] = {}
@@ -270,6 +335,7 @@ def train(config: dict[str, Any]) -> TrainingArtifacts:
         }
         logger.log(record)
 
+        improved = False
         if (
             val_metrics["accuracy"] > best_val_accuracy
             or (
@@ -277,29 +343,20 @@ def train(config: dict[str, Any]) -> TrainingArtifacts:
                 and val_metrics["loss"] < best_summary.get("final_val_loss", float("inf"))
             )
         ):
+            improved = True
             best_val_accuracy = val_metrics["accuracy"]
             torch.save(model.state_dict(), run_dir / "checkpoint.pt")
-            best_summary = {
-                "run_name": run_name,
-                "model_name": model_config["name"],
-                "dataset_name": dataset_name,
-                "seed": seed,
-                "epoch": epoch,
-                "final_train_loss": train_metrics["loss"],
-                "final_val_loss": val_metrics["loss"],
-                "final_val_accuracy": val_metrics["accuracy"],
-                "final_val_f1": val_metrics["f1"],
-                "parameter_count": parameter_count,
-                "approx_flops_per_example": approx_flops,
-                "avg_effective_depth": val_metrics["effective_depth"],
-                "avg_active_slots": val_metrics["avg_active_slots"],
-                "avg_active_think_slots": val_metrics["avg_active_think_slots"],
-                "avg_step_gate": val_metrics["avg_step_gate"],
-                "avg_slot_gate": val_metrics["avg_slot_gate"],
-                "throughput": val_metrics["throughput"],
-                "peak_gpu_memory_mb": val_metrics["peak_gpu_memory_mb"],
-                "depth_difficulty_corr": val_metrics["depth_difficulty_corr"],
-            }
+            best_summary = build_summary_payload(
+                run_name=run_name,
+                model_name=model_config["name"],
+                dataset_name=dataset_name,
+                seed=seed,
+                epoch=epoch,
+                train_metrics=train_metrics,
+                val_metrics=val_metrics,
+                parameter_count=parameter_count,
+                approx_flops=approx_flops,
+            )
             best_analysis = {
                 "run_name": run_name,
                 "sample_wise_depth_distribution": val_metrics["depth_distribution"],
@@ -312,29 +369,24 @@ def train(config: dict[str, Any]) -> TrainingArtifacts:
             }
             write_json(run_dir / "best_accuracy_summary.json", best_summary)
 
+        if improved:
+            epochs_without_improvement = 0
+        else:
+            epochs_without_improvement += 1
+
         if val_metrics["loss"] < best_val_loss:
             best_val_loss = val_metrics["loss"]
-            best_loss_summary = {
-                "run_name": run_name,
-                "model_name": model_config["name"],
-                "dataset_name": dataset_name,
-                "seed": seed,
-                "epoch": epoch,
-                "final_train_loss": train_metrics["loss"],
-                "final_val_loss": val_metrics["loss"],
-                "final_val_accuracy": val_metrics["accuracy"],
-                "final_val_f1": val_metrics["f1"],
-                "parameter_count": parameter_count,
-                "approx_flops_per_example": approx_flops,
-                "avg_effective_depth": val_metrics["effective_depth"],
-                "avg_active_slots": val_metrics["avg_active_slots"],
-                "avg_active_think_slots": val_metrics["avg_active_think_slots"],
-                "avg_step_gate": val_metrics["avg_step_gate"],
-                "avg_slot_gate": val_metrics["avg_slot_gate"],
-                "throughput": val_metrics["throughput"],
-                "peak_gpu_memory_mb": val_metrics["peak_gpu_memory_mb"],
-                "depth_difficulty_corr": val_metrics["depth_difficulty_corr"],
-            }
+            best_loss_summary = build_summary_payload(
+                run_name=run_name,
+                model_name=model_config["name"],
+                dataset_name=dataset_name,
+                seed=seed,
+                epoch=epoch,
+                train_metrics=train_metrics,
+                val_metrics=val_metrics,
+                parameter_count=parameter_count,
+                approx_flops=approx_flops,
+            )
 
         print(
             f"epoch={epoch} "
@@ -345,6 +397,14 @@ def train(config: dict[str, Any]) -> TrainingArtifacts:
             f"depth={val_metrics['effective_depth']:.3f} "
             f"slots={val_metrics['avg_active_slots']:.3f}"
         )
+
+        if early_stop_patience > 0 and epochs_without_improvement >= early_stop_patience:
+            print(
+                f"early_stop epoch={epoch} "
+                f"best_epoch={best_summary.get('epoch', epoch)} "
+                f"best_val_acc={best_summary.get('final_val_accuracy', val_metrics['accuracy']):.4f}"
+            )
+            break
 
     write_json(run_dir / "summary.json", best_summary)
     write_json(run_dir / "analysis.json", best_analysis)

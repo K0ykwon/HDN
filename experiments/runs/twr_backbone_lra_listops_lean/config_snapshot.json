@@ -17,10 +17,10 @@
     "local_context_kernel": 5,
     "mlp_hidden_dim": 128,
     "name": "twr",
-    "num_readout_queries": 6,
+    "num_readout_queries": 1,
     "slot_dim": 64,
     "stride": 2,
-    "think_steps": 6,
+    "think_steps": 4,
     "window_size": 4
   },
   "run": {

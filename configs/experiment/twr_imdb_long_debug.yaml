@@ -1,5 +1,0 @@
-model: twr_text_small.yaml
-data: imdb_long_debug.yaml
-train: text_debug.yaml
-run:
-  name: twr_imdb_long_debug

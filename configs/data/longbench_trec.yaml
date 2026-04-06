@@ -9,3 +9,4 @@ batch_size: 8
 split_seed: 7
 lowercase: true
 use_e_variant: false
+local_files_only: true

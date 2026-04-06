@@ -25,8 +25,13 @@ def compute_losses(
     slot_penalty_weight: float,
     write_penalty_weight: float,
     balance_penalty_weight: float,
+    label_smoothing: float,
 ) -> LossBreakdown:
-    task_loss = nn.functional.cross_entropy(logits, labels)
+    task_loss = nn.functional.cross_entropy(
+        logits,
+        labels,
+        label_smoothing=label_smoothing,
+    )
     normalized_depth = effective_depth.float().mean() / max(float(think_steps), 1.0)
     avg_slot_gate = slot_gates.float().mean()
     total_slots = max(float(slot_histogram.numel()), 1.0)

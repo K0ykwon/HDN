@@ -1,0 +1,5 @@
+model: mamba_text_small.yaml
+data: lra_listops.yaml
+train: benchmark.yaml
+run:
+  name: mamba_lra_listops

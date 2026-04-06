@@ -1,5 +1,0 @@
-model: twr_text_small.yaml
-data: hyperpartisan.yaml
-train: benchmark_full.yaml
-run:
-  name: twr_hyperpartisan_full

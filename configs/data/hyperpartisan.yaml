@@ -11,4 +11,5 @@ batch_size: 8
 train_split: train
 val_split: validation
 lowercase: true
-streaming: true
+streaming: false
+local_files_only: true

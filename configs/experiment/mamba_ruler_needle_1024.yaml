@@ -1,0 +1,9 @@
+model: mamba_long_small.yaml
+data: ruler_needle.yaml
+train: benchmark.yaml
+overrides:
+  data:
+    seq_len: 1024
+    batch_size: 16
+run:
+  name: mamba_ruler_needle_1024

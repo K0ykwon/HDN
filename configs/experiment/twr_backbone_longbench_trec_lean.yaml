@@ -1,5 +1,0 @@
-model: twr_backbone_long_lean.yaml
-data: longbench_trec.yaml
-train: benchmark_full.yaml
-run:
-  name: twr_backbone_longbench_trec_lean

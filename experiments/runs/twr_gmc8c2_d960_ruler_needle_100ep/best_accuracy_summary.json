@@ -1,0 +1,21 @@
+{
+  "approx_flops_per_example": 251658240,
+  "avg_active_slots": 253.0,
+  "avg_active_think_slots": 31.188748717308044,
+  "avg_effective_depth": 6.058040827512741,
+  "avg_slot_gate": 0.24558068998157978,
+  "avg_step_gate": 0.8430068455636501,
+  "dataset_name": "dataset",
+  "depth_difficulty_corr": -0.7248858958482742,
+  "epoch": 16,
+  "final_train_loss": 1.3094405503943563,
+  "final_val_accuracy": 0.09375,
+  "final_val_f1": 0.0,
+  "final_val_loss": 4.28546829521656,
+  "model_name": "twr",
+  "parameter_count": 17506136,
+  "peak_gpu_memory_mb": 1299.97119140625,
+  "run_name": "twr_gmc8c2_d960_ruler_needle_100ep",
+  "seed": 7,
+  "throughput": 313.21566395167343
+}

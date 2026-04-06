@@ -1,0 +1,8 @@
+model: twr_backbone_text.yaml
+data: lra_listops.yaml
+train: benchmark.yaml
+overrides:
+  model:
+    think_steps: 6
+run:
+  name: twr_backbone_lra_listops_think6

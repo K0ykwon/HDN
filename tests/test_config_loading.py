@@ -4,11 +4,11 @@ from src.twr.utils.config import load_experiment
 
 
 def test_load_experiment_merges_sections() -> None:
-    config = load_experiment(Path("configs/experiment/twr_debug.yaml"))
+    config = load_experiment(Path("configs/experiment/twr_backbone_lra_listops.yaml"))
     assert config["model"]["name"] == "twr"
-    assert config["data"]["task"] == "special_token_parity"
-    assert config["train"]["epochs"] == 2
-    assert config["train"]["depth_penalty_weight"] == 0.0001
+    assert config["data"]["kind"] == "lra_listops"
+    assert config["train"]["epochs"] == 15
+    assert config["train"]["write_penalty_weight"] == 0.001
 
 
 def test_load_mamba_placeholder_experiment() -> None:
@@ -16,7 +16,8 @@ def test_load_mamba_placeholder_experiment() -> None:
     assert config["model"]["name"] == "mamba_placeholder"
 
 
-def test_load_count_compare_experiment() -> None:
-    config = load_experiment(Path("configs/experiment/twr_count_compare_adaptive.yaml"))
-    assert config["data"]["task"] == "count_compare"
-    assert config["train"]["epochs"] == 6
+def test_load_current_long_benchmark_experiment() -> None:
+    config = load_experiment(Path("configs/experiment/twr_backbone_longbench_trec.yaml"))
+    assert config["data"]["kind"] == "longbench"
+    assert config["data"]["benchmark_name"] == "trec"
+    assert config["train"]["epochs"] == 15

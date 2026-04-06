@@ -1,0 +1,8 @@
+model: twr_backbone_long.yaml
+data: ruler_needle.yaml
+train: benchmark.yaml
+overrides:
+  model:
+    think_steps: 8
+run:
+  name: twr_backbone_ruler_needle_think8

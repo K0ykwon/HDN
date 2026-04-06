@@ -1,5 +1,0 @@
-model: transformer_small.yaml
-data: count_compare.yaml
-train: validation.yaml
-run:
-  name: transformer_count_compare

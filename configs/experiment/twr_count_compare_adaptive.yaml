@@ -1,5 +1,0 @@
-model: twr_v1.yaml
-data: count_compare.yaml
-train: validation.yaml
-run:
-  name: twr_count_compare_adaptive

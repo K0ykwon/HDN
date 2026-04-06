@@ -34,11 +34,25 @@ def main() -> None:
         run_command("compileall", [sys.executable, "-m", "compileall", "src", "scripts", "tests"]),
         run_command(
             "pytest",
-            [sys.executable, "-m", "pytest", "-q", "tests/test_config_loading.py", "tests/test_twr_forward.py", "tests/test_write_module.py", "tests/test_mamba_placeholder.py"],
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                "-q",
+                "tests/test_config_loading.py",
+                "tests/test_latent_encoder.py",
+                "tests/test_twr_forward.py",
+                "tests/test_mamba_placeholder.py",
+            ],
         ),
         run_command(
-            "train_twr_debug",
-            [sys.executable, "scripts/train.py", "--experiment", "configs/experiment/twr_debug.yaml"],
+            "train_twr_backbone_debug",
+            [
+                sys.executable,
+                "scripts/train.py",
+                "--experiment",
+                "configs/experiment/twr_backbone_lra_listops.yaml",
+            ],
         ),
         run_command(
             "train_transformer_debug",

@@ -1,8 +1,0 @@
-model: twr_v1.yaml
-data: count_compare.yaml
-train: validation.yaml
-overrides:
-  model:
-    use_slot_gate: false
-run:
-  name: twr_count_compare_no_slot_gate

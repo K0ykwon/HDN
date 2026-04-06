@@ -1,0 +1,11 @@
+name: twr
+embed_dim: 2304
+slot_dim: 2304
+think_steps: 6
+mlp_hidden_dim: 4608
+dropout: 0.1
+local_context_kernel: 7
+window_size: 8
+stride: 2
+num_readout_queries: 1
+freeze_encoder: false

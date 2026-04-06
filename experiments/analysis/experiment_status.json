@@ -1,0 +1,26 @@
+{
+  "phase_0_core_baselines": {
+    "status": "completed_rerun",
+    "notes": "Clean rerun finished for TWR, Transformer, and Mamba on ListOps, RULER needle, LongBench TREC, and Hyperpartisan."
+  },
+  "phase_1_compression_bottleneck": {
+    "status": "completed_rerun",
+    "notes": "Naive stride/window compression sweeps were rerun and remained worse than the lean baseline."
+  },
+  "phase_2_hierarchy_study": {
+    "status": "completed_rerun",
+    "notes": "Think-step and readout-query sweeps were rerun. ListOps remains most stable at the current lean default; queries=2 is the best smaller variant."
+  },
+  "phase_3_length_extrapolation": {
+    "status": "completed_rerun",
+    "notes": "RULER 256/512/1024 clean rerun completed for TWR, Transformer, and Mamba."
+  },
+  "phase_4_benchmark_expansion": {
+    "status": "completed_initial_rerun",
+    "notes": "LongBench LSHT clean rerun completed for TWR, Transformer, and Mamba. Wider benchmark integration remains future work."
+  },
+  "phase_5_efficiency_study": {
+    "status": "partial",
+    "notes": "Throughput and memory were regenerated in the rerun analysis; equal-throughput and larger-scale efficiency studies remain."
+  }
+}

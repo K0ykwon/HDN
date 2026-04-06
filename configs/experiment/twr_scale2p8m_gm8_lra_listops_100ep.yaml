@@ -1,0 +1,12 @@
+model: twr_backbone_scale_25m.yaml
+data: lra_listops.yaml
+train: benchmark_100ep.yaml
+overrides:
+  model:
+    embed_dim: 384
+    slot_dim: 384
+    mlp_hidden_dim: 768
+    use_global_memory: true
+    memory_slots: 8
+run:
+  name: twr_scale2p8m_gm8_lra_listops_100ep

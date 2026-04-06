@@ -1,29 +1,13 @@
 # TWR-LM
 
-`TWR-LM`은 Transformer를 대체할 수 있는 `tokenless latent backbone`을 실험하는 PyTorch 연구 코드베이스입니다.
+`TWR-LM`은 `tokenless latent backbone` 실험을 위한 PyTorch 연구 저장소입니다. 현재 메인라인은 예전 `write / think / slot-gate` 계열이 아니라 `overlapping latent encoder -> hierarchical latent backbone -> summary readout` 구조입니다.
 
-현재 메인라인 구현은 초기의 `write -> memory slots -> adaptive think` 설계가 아니라, 더 단순하고 재현 가능한 `overlapping latent encoder -> hierarchical latent backbone -> query readout` 구조를 사용합니다.
+## Mainline
 
-## 현재 방향
-
-- 입력 토큰은 overlapping window 단위 latent sequence로 압축됩니다.
-- 압축 이후 persistent state는 token-wise hidden state가 아니라 latent sequence뿐입니다.
-- backbone은 공유 refinement와 pairwise merge를 반복해 latent pyramid를 구성합니다.
-- 최종 출력은 multi-query readout으로 읽습니다.
-- 목표는 `Transformer 수준의 정확도`를 `더 작은 혹은 비슷한 규모의 tokenless backbone`으로 달성하는 것입니다.
-
-## 현재 모델 구조
-
-```text
-tokens
-  -> PretrainedLatentEncoder
-  -> latent sequence
-  -> HierarchicalLatentBackbone
-       - shared local refinement
-       - selective pairwise merge
-       - multiscale query readout
-  -> logits
-```
+- compression 이후 persistent state는 token-wise hidden state가 아니라 latent sequence / latent pyramid입니다.
+- backbone과 readout은 attention-free latent 연산을 기준으로 정리되어 있습니다.
+- 현재 유지 대상 TWR 실험은 `twr_backbone_*` 계열입니다.
+- 예전 `twr_*`, `ablation_*`, `count_compare_*` 설정과 관련 문서는 정리했습니다.
 
 핵심 구현 파일:
 
@@ -32,57 +16,21 @@ tokens
 - [src/twr/modules/latent_backbone.py](/home/dause/Desktop/TWR-LM/src/twr/modules/latent_backbone.py)
 - [src/twr/training/trainer.py](/home/dause/Desktop/TWR-LM/src/twr/training/trainer.py)
 
-## 현재 실험 상태
-
-최근 비교는 `TWR lean`, `Transformer`, `Mamba` 기준으로 정리되어 있습니다.
-
-### ListOps
-
-- `TWR lean`: `0.2285`, `82,587 params`
-- `Transformer`: `0.2383`, `86,026 params`
-- `Mamba`: `0.1289`, `95,530 params`
-
-### RULER needle
-
-- `TWR lean`: `0.0840`, `100,065 params`
-- `Transformer`: `0.0801`, `117,136 params`
-- `Mamba`: `0.0781`, `252,048 params`
-
-### LongBench TREC
-
-- `TWR lean`: `0.1800`, `494,083 params`
-- `Transformer`: `0.1800`, `627,250 params`
-- `Mamba`: `0.1800`, `1,272,242 params`
-
-### Hyperpartisan
-
-- `TWR lean`: `0.5400`, `475,283 params`
-- `Transformer`: `0.5450`, `624,130 params`
-- `Mamba`: `0.5150`, `1,266,050 params`
-
-요약:
-
-- `ListOps`, `Hyperpartisan`에서는 lean TWR가 Transformer에 거의 근접했습니다.
-- `RULER`에서는 lean TWR가 근소 우세지만, 큰 TWR가 보이던 장점은 줄었습니다.
-- `LongBench TREC`에서는 lean TWR가 Transformer와 동률입니다.
-- 이번 설정에서는 Mamba가 네 벤치 모두 우세를 가져오지 못했습니다.
-
-상세 비교는 [experiments/analysis/summary_report.md](/home/dause/Desktop/TWR-LM/experiments/analysis/summary_report.md) 를 보면 됩니다.
-
-## 디렉토리 개요
+## Layout
 
 ```text
 configs/
-  data/         dataset 설정
-  experiment/   실행 단위 config
-  model/        TWR / Transformer / Mamba model config
-  train/        학습 설정
+  data/
+  experiment/
+  model/
+  train/
 experiments/
-  runs/         실험 결과
-  analysis/     집계 결과
+  runs/
+  analysis/
 scripts/
   train.py
-  run_benchmark_full_suite.py
+  run_benchmark_twr.py
+  run_benchmark_suite.py
   analyze_results.py
 src/twr/
   baselines/
@@ -95,27 +43,40 @@ src/twr/
 tests/
 ```
 
-## 빠른 시작
+## Main Commands
 
-lean TWR ListOps:
-
-```bash
-python3 scripts/train.py --experiment configs/experiment/twr_backbone_lra_listops_lean.yaml
-```
-
-Transformer ListOps:
+default TWR ListOps:
 
 ```bash
-python3 scripts/train.py --experiment configs/experiment/transformer_lra_listops_full.yaml
+python3 scripts/train.py --experiment configs/experiment/twr_backbone_lra_listops.yaml
 ```
 
-전체 비교 스위트:
+default TWR 4-benchmark sweep:
 
 ```bash
-python3 scripts/run_benchmark_full_suite.py
+python3 scripts/run_benchmark_twr.py
 ```
 
-## 참고
+default TWR vs baseline comparison suite:
 
-- `twr_codex_pack/` 아래 문서들은 초기 write-think-read 설계용 스캐폴드입니다.
-- 현재 저장소의 메인라인 구현과 완전히 일치하지 않을 수 있으므로, 현행 상태는 이 README와 `configs/`, `src/` 코드를 기준으로 봐야 합니다.
+```bash
+python3 scripts/run_benchmark_suite.py
+```
+
+compression ablation:
+
+```bash
+python3 scripts/run_compression_ablation_suite.py
+```
+
+로컬 캐시 기반 데이터 준비:
+
+```bash
+python3 scripts/prepare_local_datasets.py --dataset all
+```
+
+## Notes
+
+- `Hyperpartisan`, `LongBench TREC`는 로컬 캐시 우선 설정을 사용합니다.
+- 현행 상태는 `README`, `configs/`, `src/`, `scripts/`, `tests/` 기준으로 보면 됩니다.
+- 집계 결과는 [experiments/analysis/summary_report.md](/home/dause/Desktop/TWR-LM/experiments/analysis/summary_report.md)에 기록됩니다.

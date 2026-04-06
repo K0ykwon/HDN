@@ -1,0 +1,5 @@
+model: twr_backbone_long_2latent.yaml
+data: ruler_needle.yaml
+train: benchmark.yaml
+run:
+  name: twr_backbone_ruler_needle_2latent

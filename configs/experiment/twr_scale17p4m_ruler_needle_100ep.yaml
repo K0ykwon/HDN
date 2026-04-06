@@ -1,0 +1,10 @@
+model: twr_backbone_scale_25m.yaml
+data: ruler_needle.yaml
+train: benchmark_100ep.yaml
+overrides:
+  model:
+    embed_dim: 1280
+    slot_dim: 1280
+    mlp_hidden_dim: 2560
+run:
+  name: twr_scale17p4m_ruler_needle_100ep

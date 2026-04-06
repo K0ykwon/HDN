@@ -1,0 +1,5 @@
+model: twr_backbone_scale_84m.yaml
+data: lra_listops.yaml
+train: benchmark.yaml
+run:
+  name: twr_scale84m_lra_listops

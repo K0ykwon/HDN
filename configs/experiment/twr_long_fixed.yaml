@@ -1,8 +1,0 @@
-model: twr_small_long.yaml
-data: count_compare_long.yaml
-train: validation_long.yaml
-overrides:
-  model:
-    adaptive_depth: false
-run:
-  name: twr_long_fixed

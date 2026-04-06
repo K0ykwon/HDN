@@ -38,7 +38,7 @@ class ResidualStateBlock(nn.Module):
 
 
 class MambaSSMPlaceholder(nn.Module):
-    """Shared-interface placeholder until a full Mamba/SSM baseline is added."""
+    """Shared-interface placeholder until a real Mamba/SSM baseline is added."""
 
     def __init__(self, config: MambaPlaceholderConfig) -> None:
         super().__init__()

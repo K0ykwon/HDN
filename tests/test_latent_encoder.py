@@ -36,3 +36,23 @@ def test_latent_autoencoder_reconstructs_windows() -> None:
     outputs = model(torch.randint(0, 24, (2, 9)))
     assert outputs["logits"].shape == (2, 4, 4, 24)
     assert outputs["targets"].shape == (2, 4, 4)
+
+
+def test_latent_encoder_supports_multiple_latents_per_window() -> None:
+    encoder = PretrainedLatentEncoder(
+        LatentEncoderConfig(
+            vocab_size=16,
+            max_seq_len=16,
+            embed_dim=8,
+            latent_dim=12,
+            window_size=4,
+            stride=2,
+            latents_per_window=2,
+            dropout=0.0,
+        )
+    )
+    tokens = torch.randint(0, 16, (2, 10))
+    latents = encoder(tokens)
+    assert latents.shape == (2, 8, 12)
+    assert encoder.window_count(10) == 8
+    assert torch.isfinite(latents).all()

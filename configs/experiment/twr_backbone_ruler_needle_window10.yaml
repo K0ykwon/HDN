@@ -1,0 +1,9 @@
+model: twr_backbone_long.yaml
+data: ruler_needle.yaml
+train: benchmark.yaml
+overrides:
+  model:
+    window_size: 10
+    stride: 2
+run:
+  name: twr_backbone_ruler_needle_window10

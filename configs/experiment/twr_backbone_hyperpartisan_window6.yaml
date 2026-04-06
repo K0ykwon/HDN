@@ -1,0 +1,9 @@
+model: twr_backbone_text.yaml
+data: hyperpartisan.yaml
+train: benchmark.yaml
+overrides:
+  model:
+    window_size: 6
+    stride: 2
+run:
+  name: twr_backbone_hyperpartisan_window6

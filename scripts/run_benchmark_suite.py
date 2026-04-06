@@ -13,14 +13,18 @@ from src.twr.utils.config import load_experiment
 
 
 EXPERIMENTS = [
-    "configs/experiment/twr_lra_listops.yaml",
+    "configs/experiment/twr_backbone_lra_listops.yaml",
     "configs/experiment/transformer_lra_listops.yaml",
-    "configs/experiment/twr_ruler_needle.yaml",
+    "configs/experiment/mamba_lra_listops.yaml",
+    "configs/experiment/twr_backbone_ruler_needle.yaml",
     "configs/experiment/transformer_ruler_needle.yaml",
-    "configs/experiment/twr_longbench_trec.yaml",
+    "configs/experiment/mamba_ruler_needle.yaml",
+    "configs/experiment/twr_backbone_longbench_trec.yaml",
     "configs/experiment/transformer_longbench_trec.yaml",
-    "configs/experiment/twr_hyperpartisan.yaml",
+    "configs/experiment/mamba_longbench_trec.yaml",
+    "configs/experiment/twr_backbone_hyperpartisan.yaml",
     "configs/experiment/transformer_hyperpartisan.yaml",
+    "configs/experiment/mamba_hyperpartisan.yaml",
 ]
 
 

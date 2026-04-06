@@ -14,9 +14,11 @@ from torch import Tensor
 from torch.utils.data import Dataset
 
 try:
-    from datasets import load_dataset
+    from datasets import DownloadConfig, load_dataset, load_from_disk
 except ImportError:  # pragma: no cover
     load_dataset = None
+    load_from_disk = None
+    DownloadConfig = None
 
 try:
     from huggingface_hub import hf_hub_download
@@ -53,6 +55,8 @@ class HuggingFaceTextConfig:
     val_split: str = "test"
     lowercase: bool = True
     streaming: bool = False
+    local_files_only: bool = False
+    local_dataset_path: str | None = None
 
 
 @dataclass
@@ -67,6 +71,8 @@ class LongBenchConfig:
     split_seed: int = 7
     lowercase: bool = True
     use_e_variant: bool = False
+    local_files_only: bool = False
+    local_archive_path: str | None = None
 
 
 @dataclass
@@ -169,6 +175,21 @@ def load_hf_rows(config: HuggingFaceTextConfig, split: str) -> list[dict[str, ob
     HF_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     target_rows = config.train_size if split == "train" else config.val_size
     split_name = config.train_split if split == "train" else config.val_split
+    download_config = None
+    if config.local_files_only:
+        if DownloadConfig is None:
+            raise ImportError("datasets DownloadConfig is required for local-files-only loading.")
+        download_config = DownloadConfig(local_files_only=True)
+    if config.local_dataset_path:
+        if load_from_disk is None:
+            raise ImportError("datasets load_from_disk is required for local dataset loading.")
+        dataset = load_from_disk(config.local_dataset_path)
+        if split_name not in dataset:
+            raise ValueError(
+                f"Split '{split_name}' not found in local dataset at {config.local_dataset_path}."
+            )
+        split_dataset = dataset[split_name]
+        return list(split_dataset.select(range(min(target_rows, len(split_dataset)))))
     if config.dataset_name == "imdb" and IMDB_ARROW_CACHE_DIR.exists():
         dataset = load_dataset(
             "arrow",
@@ -179,6 +200,7 @@ def load_hf_rows(config: HuggingFaceTextConfig, split: str) -> list[dict[str, ob
             split=f"{split_name}[:{target_rows}]",
             cache_dir=str(HF_CACHE_DIR),
             streaming=config.streaming,
+            download_config=download_config,
         )
     else:
         dataset = load_dataset(
@@ -186,6 +208,7 @@ def load_hf_rows(config: HuggingFaceTextConfig, split: str) -> list[dict[str, ob
             split=split_name,
             cache_dir=str(HF_CACHE_DIR),
             streaming=config.streaming,
+            download_config=download_config,
         )
 
     if config.streaming:
@@ -197,12 +220,16 @@ def read_longbench_rows(config: LongBenchConfig) -> list[dict[str, object]]:
     if hf_hub_download is None:
         raise ImportError("huggingface_hub is required for LongBenchDataset.")
     LONGBENCH_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    archive_path = hf_hub_download(
-        repo_id="THUDM/LongBench",
-        repo_type="dataset",
-        filename="data.zip",
-        local_dir=str(LONGBENCH_CACHE_DIR),
-    )
+    if config.local_archive_path:
+        archive_path = str(Path(config.local_archive_path).expanduser().resolve())
+    else:
+        archive_path = hf_hub_download(
+            repo_id="THUDM/LongBench",
+            repo_type="dataset",
+            filename="data.zip",
+            local_dir=str(LONGBENCH_CACHE_DIR),
+            local_files_only=config.local_files_only,
+        )
     suffix = "_e" if config.use_e_variant else ""
     member_name = f"data/{config.benchmark_name}{suffix}.jsonl"
     with ZipFile(archive_path) as archive:
